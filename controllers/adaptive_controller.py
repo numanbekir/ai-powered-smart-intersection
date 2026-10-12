@@ -376,6 +376,17 @@ class AdaptiveSignalController:
         if hasattr(self.strategy, "mark_cycle_served"):
             self.strategy.mark_cycle_served(self.engine, next_direction)
 
+        # The strategy starts its discharge-rate bookkeeping for the direction
+        # IT picked. If one of the overrides above changed the direction, move
+        # the bookkeeping to the direction that really gets the green, or the
+        # rate would be learned for a direction that was red the whole phase.
+        tracking = getattr(self.engine, "optimal_phase_tracking", None)
+        if tracking and tracking.get("direction") != next_direction:
+            tracking["direction"] = next_direction
+            tracking["crossed_before"] = self.engine.vehicles[next_direction].get("crossed", 0)
+        if tracking:
+            tracking["green_time"] = next_green
+
         self.currentGreen = next_idx
         self.prepare_signal_times(self.currentGreen, next_green)
 

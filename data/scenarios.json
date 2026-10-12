@@ -1666,7 +1666,7 @@
       "fps": 60,
       "simulation_time": 120,
       "playback_speed": 1.0,
-      "spawn_interval": 9.34,
+      "spawn_interval": 3.81,
       "random_seed": 42,
       "allowed_vehicle_types": {
         "car": true,
@@ -1675,9 +1675,9 @@
         "bike": false
       },
       "vehicle_speeds": {
-        "car": 0.75,
-        "bus": 0.65,
-        "truck": 0.7,
+        "car": 1.25,
+        "bus": 1.3,
+        "truck": 1.1,
         "bike": 1.5,
         "ambulance": 1.65,
         "police": 1.7,
@@ -1734,7 +1734,7 @@
         "red_time": 50
       },
       "emergency": {
-        "enabled": false,
+        "enabled": true,
         "vehicle_types": {
           "ambulance": true,
           "police": true,

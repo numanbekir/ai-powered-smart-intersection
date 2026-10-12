@@ -180,7 +180,7 @@ class OptimalGroundTruthStrategy(BaseAdaptiveStrategy):
 
         return max(free_flow_eta, queue_clear_eta)
 
-    def find_nearest_emergency_vehicle(self, engine, direction):
+    def find_nearest_emergency_vehicle(self, engine, direction, require_waiting=True):
         best_vehicle = None
         best_distance = None
 
@@ -200,7 +200,12 @@ class OptimalGroundTruthStrategy(BaseAdaptiveStrategy):
                 # olmadan, kavsaga yuzlerce piksel uzakta, daha kavsaga
                 # yaklasmamis bir acil durum araci bile hemen normal
                 # trafigin onune geciyordu.
-                if not getattr(vehicle, "waitingDueToSignalQueue", False):
+                #
+                # `require_waiting=False` is for the direction that is green
+                # right now (get_green_extension): waitingDueToSignalQueue is
+                # never set while a vehicle's own signal is green, so with the
+                # flag required the hold could not find any vehicle at all.
+                if require_waiting and not getattr(vehicle, "waitingDueToSignalQueue", False):
                     continue
 
                 distance = self.distance_to_stop_line(engine, vehicle, direction)
@@ -334,7 +339,9 @@ class OptimalGroundTruthStrategy(BaseAdaptiveStrategy):
         if remaining_green > extension_check_threshold:
             return 0
 
-        vehicle, distance = self.find_nearest_emergency_vehicle(engine, current_direction)
+        vehicle, distance = self.find_nearest_emergency_vehicle(
+            engine, current_direction, require_waiting=False
+        )
         if vehicle is None:
             return 0
 
@@ -357,6 +364,12 @@ class OptimalGroundTruthStrategy(BaseAdaptiveStrategy):
         needed = (eta + clearance_buffer) - remaining_green
 
         if needed <= 0:
+            return 0
+
+        # Holding the green only helps if the vehicle can actually clear the
+        # intersection within what is left of the hold budget. Otherwise the
+        # cross traffic waits and the vehicle still gets stopped.
+        if needed > remaining_hold_budget:
             return 0
 
         extension = min(needed, remaining_hold_budget)

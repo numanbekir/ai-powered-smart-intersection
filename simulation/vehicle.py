@@ -47,6 +47,9 @@ class Vehicle(pygame.sprite.Sprite):
 
         self.x = engine.x[direction][lane]
         self.y = engine.y[direction][lane]
+        self._placed = False
+        self.spawnTime = engine.simulation_elapsed
+        self.spawnDistance = None
 
         self.crossed = 0
         self.turned = 0
@@ -95,16 +98,54 @@ class Vehicle(pygame.sprite.Sprite):
         else:
             self.stop = engine.defaultStop[direction]
 
-        if direction == "right":
-            engine.x[direction][lane] -= self.image.get_rect().width + engine.stoppingGap
-        elif direction == "left":
-            engine.x[direction][lane] += self.image.get_rect().width + engine.stoppingGap
-        elif direction == "down":
-            engine.y[direction][lane] -= self.image.get_rect().height + engine.stoppingGap
-        elif direction == "up":
-            engine.y[direction][lane] += self.image.get_rect().height + engine.stoppingGap
-
         engine.simulation.add(self)
+
+    def place_at_spawn(self):
+        """Put the vehicle at its lane's spawn origin, or right behind the
+        lane's last vehicle if that one has not cleared the origin yet.
+
+        The origin itself never moves. Previously every spawn pushed the
+        origin back by one vehicle length and it was never restored, so the
+        Nth vehicle of a lane entered N lengths away from the intersection no
+        matter how empty the road was (measured: 322px for the first vehicle,
+        4500px after 20 simulated minutes).
+
+        Runs on the main loop's first move() of this vehicle, not in
+        __init__: the spawner thread must not read another vehicle's position
+        while the main loop is moving it. Inside a tick vehicles move in spawn
+        order, so the vehicle ahead has already been moved when this runs.
+        """
+        self._placed = True
+        engine = self.engine
+        prev = self.previous_vehicle()
+
+        if prev is not None:
+            gap = engine.stoppingGap
+            rect = self.image.get_rect()
+            prev_rect = prev.image.get_rect()
+
+            if self.direction == "right":
+                self.x = min(self.x, prev.x - rect.width - gap)
+            elif self.direction == "left":
+                self.x = max(self.x, prev.x + prev_rect.width + gap)
+            elif self.direction == "down":
+                self.y = min(self.y, prev.y - rect.height - gap)
+            elif self.direction == "up":
+                self.y = max(self.y, prev.y + prev_rect.height + gap)
+
+        self.spawnDistance = self.distance_to_stop_line()
+
+    def distance_to_stop_line(self):
+        line = self.engine.stopLines[self.direction]
+        rect = self.image.get_rect()
+
+        if self.direction == "right":
+            return max(0.0, line - (self.x + rect.width))
+        if self.direction == "down":
+            return max(0.0, line - (self.y + rect.height))
+        if self.direction == "left":
+            return max(0.0, self.x - line)
+        return max(0.0, self.y - line)
 
     def load_vehicle_image(self, vehicleClass, direction):
         path = str(self.engine.images_dir / "vehicles" / f"{vehicleClass}.png")
@@ -410,7 +451,16 @@ class Vehicle(pygame.sprite.Sprite):
 
         engine = self.engine
 
+        self.crossedLogged = True
+        engine.mark_direction_served(self.direction)
+
+        # Vehicles spawned during warm-up start from an empty intersection
+        # and are left out of every wait/delay statistic.
+        if self.spawnTime < engine.warmup_time:
+            return
+
         engine.vehicleMetrics[self.direction].append(self.waitTime)
+        engine.vehicleDelays.append(self.control_delay())
 
         if self.isEmergency:
             engine.emergencyVehicleMetrics["wait_times"].append(self.waitTime)
@@ -427,10 +477,17 @@ class Vehicle(pygame.sprite.Sprite):
             engine.normalVehicleMetrics["wait_times"].append(self.waitTime)
             engine.normalVehicleMetrics["crossed"] += 1
 
-        self.crossedLogged = True
-        engine.mark_direction_served(self.direction)
+    def control_delay(self):
+        """Seconds lost to the signal: time from spawn to the stop line minus
+        the time the same trip takes at free flow. Unlike waitTime it also
+        counts queue discharge and start-up delay during green."""
+        free_flow = (self.spawnDistance or 0.0) / (self.base_speed * self.engine.fps)
+        return max(0.0, self.engine.simulation_elapsed - self.spawnTime - free_flow)
 
     def move(self):
+        if not self._placed:
+            self.place_at_spawn()
+
         old_x, old_y = self.x, self.y
         engine = self.engine
         speed = self.current_speed()

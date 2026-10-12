@@ -62,6 +62,10 @@ class SimulationEngine:
         self.images_dir = IMAGES_DIR
         self.fps = int(self.config["fps"])
         self.simulation_time = float(self.config["simulation_time"])
+        # Vehicles spawned before this many simulated seconds are excluded
+        # from wait/delay/queue statistics (the run starts from an empty
+        # intersection). 0 keeps every vehicle, as before.
+        self.warmup_time = float(self.config.get("warmup_time", 0.0))
         self.playback_speed = max(0.1, float(self.config["playback_speed"]))
         self.fixed_config = copy.deepcopy(self.config["fixed"])
 
@@ -192,6 +196,10 @@ class SimulationEngine:
             "crossed": 0,
         }
 
+        # Control delay of every measured vehicle that crossed (see
+        # Vehicle.control_delay).
+        self.vehicleDelays = []
+
         self.queue_samples = {
             direction: []
             for direction in ["right", "down", "left", "up"]
@@ -212,6 +220,8 @@ class SimulationEngine:
         self.decision_logger = DecisionLogger()
         self.simulation_elapsed = 0.0
         self._tick_condition = threading.Condition()
+        self._worker_threads = []
+        self._worker_sleep_target = {}
 
         self.base_simulation_delta = 1.0 / self.fps
         self.current_simulation_delta = (
@@ -321,16 +331,47 @@ class SimulationEngine:
         # ilerlettiği tek otoriter `simulation_elapsed` değerine ulaşılmasını
         # bekliyor; böylece controller/spawner'ın "zamanı", gerçek dünya
         # zamanlamasından bağımsız olarak ana döngüyle birebir örtüşüyor.
-        with self._tick_condition:
-            target_elapsed = self.simulation_elapsed + seconds
+        #
+        # The thread registers its wake-up time and is woken by the main loop
+        # (advance_simulation_time removes the entry). While the entry exists
+        # the thread counts as asleep, which is what wait_for_workers checks.
+        ident = threading.get_ident()
 
-            while self.simulation_elapsed < target_elapsed and self.simulationRunning:
+        with self._tick_condition:
+            self._worker_sleep_target[ident] = self.simulation_elapsed + seconds
+            self._tick_condition.notify_all()
+
+            while ident in self._worker_sleep_target and self.simulationRunning:
                 self._tick_condition.wait(timeout=0.05)
+
+            self._worker_sleep_target.pop(ident, None)
 
     def advance_simulation_time(self):
         with self._tick_condition:
             self.simulation_elapsed += self.current_simulation_delta
+
+            for ident, target in list(self._worker_sleep_target.items()):
+                if self.simulation_elapsed >= target:
+                    del self._worker_sleep_target[ident]
+
             self._tick_condition.notify_all()
+            self._wait_for_workers_locked()
+
+    def wait_for_workers(self):
+        with self._tick_condition:
+            self._wait_for_workers_locked()
+
+    def _wait_for_workers_locked(self):
+        # A tick must not start while the controller or the spawner is still
+        # reacting to the previous one. Without this the main loop only gave
+        # them one frame of real time (1/fps) to finish, so under CPU load a
+        # new vehicle or a signal change could land one tick late and the same
+        # seed produced slightly different results.
+        while self.simulationRunning and any(
+            thread.is_alive() and thread.ident not in self._worker_sleep_target
+            for thread in self._worker_threads
+        ):
+            self._tick_condition.wait(timeout=0.05)
 
     def stop_simulation(self):
         self.simulationRunning = False
@@ -358,6 +399,7 @@ class SimulationEngine:
         return round(self.simulation_elapsed, 2)
 
     def prepare_simulation_step(self):
+        self.wait_for_workers()
 
         self.current_simulation_delta = (
             self.base_simulation_delta * self.playback_speed
@@ -726,6 +768,9 @@ class SimulationEngine:
                 self.decision_narrative_log = self.decision_narrative_log[-200:]
 
     def update_queue_metrics(self):
+        if self.simulation_elapsed < self.warmup_time:
+            return
+
         total_queue = 0
 
         for direction in ["right", "down", "left", "up"]:
@@ -966,8 +1011,33 @@ class SimulationEngine:
 
         priority_metrics = self.emergency_priority_metrics
 
+        # Measured vehicles that never reached the stop line. Their waits are
+        # not part of overall_avg_wait, so a controller that leaves many
+        # vehicles behind looks better than it is unless this is read with it.
+        uncrossed = [
+            vehicle
+            for direction in ["right", "down", "left", "up"]
+            for lane in self.ACTIVE_LANES
+            for vehicle in self.vehicles[direction][lane]
+            if vehicle.crossed == 0 and vehicle.spawnTime >= self.warmup_time
+        ]
+        uncrossed_waits = [vehicle.waitTime for vehicle in uncrossed]
+
         metrics = {
             "overall_avg_wait": round(overall_avg, 3),
+            "overall_avg_delay": (
+                round(sum(self.vehicleDelays) / len(self.vehicleDelays), 3)
+                if self.vehicleDelays
+                else 0.0
+            ),
+            "overall_delay_p95": round(percentile(self.vehicleDelays, 95), 3),
+            "vehicles_measured": len(total_wait_values) + len(uncrossed),
+            "vehicles_uncrossed": len(uncrossed),
+            "uncrossed_avg_wait": (
+                round(sum(uncrossed_waits) / len(uncrossed_waits), 3)
+                if uncrossed_waits
+                else 0.0
+            ),
             "overall_median_wait": round(overall_p50, 3),
             "overall_max_wait": round(overall_max, 3),
             "overall_wait_p50": round(overall_p50, 3),
@@ -1918,6 +1988,7 @@ class SimulationEngine:
 
         thread1 = threading.Thread(target=self.controller.run, daemon=True)
         thread2 = threading.Thread(target=self.generateVehicles, daemon=True)
+        self._worker_threads = [thread1, thread2]
 
         thread1.start()
         thread2.start()
@@ -2160,6 +2231,7 @@ class SimulationEngine:
             target=self.generateVehicles,
             daemon=True,
         )
+        self._worker_threads = [thread1, thread2]
 
         thread1.start()
         thread2.start()
