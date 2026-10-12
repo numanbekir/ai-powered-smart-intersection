@@ -1,5 +1,6 @@
 from simulation.signal import TrafficSignal
 
+from controllers.strategies.camera_queue_strategy import CameraQueueStrategy
 from controllers.strategies.optimal_ground_truth_strategy import OptimalGroundTruthStrategy
 from controllers.strategies.rolling_horizon_ground_truth_strategy import (
     RollingHorizonGroundTruthStrategy,
@@ -10,6 +11,7 @@ STRATEGY_MAP = {
     "optimal_ground_truth": OptimalGroundTruthStrategy,
     "rolling_horizon_ground_truth": RollingHorizonGroundTruthStrategy,
     "rolling_horizon_ground_truth_v2": RollingHorizonGroundTruthV2Strategy,
+    "camera_queue": CameraQueueStrategy,
 }
 
 

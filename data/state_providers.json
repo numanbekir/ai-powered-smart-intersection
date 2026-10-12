@@ -11,8 +11,8 @@
     "provider_id": "yolo_v1",
     "display_name": "YOLO Provider",
     "provider_type": "yolo",
-    "status": "planned",
-    "description": "Placeholder for future real camera/YOLO-based vehicle detection. Not implemented yet -- returns no signal. See docs/ground_truth_final_state_and_gaps.md for the ground-truth ceiling metrics real detection should be measured against.",
-    "description_tr": "Gelecekteki gerçek kamera/YOLO tabanlı araç algılaması için yer tutucu. Henüz uygulanmadı -- hiçbir sinyal döndürmez. Gerçek algılamanın karşılaştırılması gereken ground-truth tavan metrikleri için docs/ground_truth_final_state_and_gaps.md'ye bakın."
+    "status": "active",
+    "description": "Detects vehicles on the overhead camera frame with a YOLO model trained on simulation frames. Reports standing vehicles per approach and detected emergency vehicles. Sees only the 900x900 frame.",
+    "description_tr": "Kavşağın üstten kamera karesinde araçları, simülasyon kareleriyle eğitilmiş bir YOLO modeliyle tespit eder. Her yön için duran araçları ve tespit edilen acil durum araçlarını bildirir. Yalnızca 900x900 kareyi görür."
   }
 ]

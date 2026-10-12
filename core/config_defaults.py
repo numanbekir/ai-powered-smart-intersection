@@ -309,6 +309,53 @@ def default_controller_versions() -> List[Dict[str, Any]]:
                 "emergency_priority_switch",
             ],
         },
+        {
+            "version_id": "adaptive_camera_queue_v1",
+            "display_name": "Adaptive Camera Queue v1 - YOLO",
+            "description": "Applies the decision rule of Adaptive Optimal v3 using only what the YOLO state provider detects on the overhead camera frame: visible standing vehicles per approach and detected emergency vehicles.",
+            "controller_family": "adaptive",
+            "status": "active",
+            "parent_version_id": "adaptive_optimal_ground_truth_v3",
+            "strategy_key": "camera_queue",
+            "implementation_key": "adaptive_controller",
+            "target_state_provider_type": "yolo",
+            "compatible_state_provider_types": ["yolo"],
+            "supports_real_preemption": True,
+            "supports_cycle_fairness": True,
+            "params": {
+                "min_green": 5,
+                "max_green": 30,
+                "yellow_time": 3,
+                "fairness_lambda": 1.5,
+                "starvation_soft_limit": 20,
+                "emergency_clearance_buffer": 2.0,
+                "emergency_max_hold_time": 20.0,
+                "emergency_extension_check_threshold": 2.0,
+                "multi_direction_max_green": 6,
+                "controller_repeat_guard_enabled": False,
+                "emergency_priority_enabled": True,
+                "emergency_starvation_override_limit": 90.0,
+                "demand_share_scaling_exponent": 0.5,
+                "assumed_discharge_rate": 0.5,
+                "emergency_speed_px_per_s": 80.0,
+                "seconds_per_vehicle_ahead": 1.0,
+                "saturated_green_bonus": 0.0
+            },
+            "change_summary": "v3'ün karar kuralı, girdileri yalnızca kamera tespitlerinden ve kontrolcünün kendi saatinden alacak şekilde yeniden yazıldı. Araç konumu, hızı ve bekleme süresi simülasyondan okunmaz.",
+            "rationale": "Tam bilgili v3 ile aynı kuralı kamera girdisiyle çalıştırmak, aradaki farkı algılamanın maliyeti olarak ölçmeyi sağlar: sınırlı görüş alanı, bir saniyelik gözlem aralığı ve tespit hataları.",
+            "expected_effect": "Kuyruğun görüş alanına sığdığı senaryolarda v3'e yakın sonuç. Kuyruğun kare dışına taştığı yoğun senaryolarda v3'ün gerisinde.",
+            "created_at": now,
+            "updated_at": now,
+            "tags": [
+                "adaptive",
+                "camera",
+                "yolo",
+                "object_detection",
+                "real_preemption",
+                "cycle_fairness"
+            ],
+            "description_tr": "Adaptive Optimal v3'ün karar kuralını yalnızca YOLO sağlayıcının üstten kamera karesinde tespit ettikleriyle uygular: her yönde görünen duran araçlar ve tespit edilen acil durum araçları."
+        },
     ]
 
 
@@ -326,14 +373,13 @@ def default_state_providers() -> List[Dict[str, Any]]:
         },
         {
             "provider_id": "yolo_v1",
-            "display_name": "YOLO Provider V1",
+            "display_name": "YOLO Provider",
             "provider_type": "yolo",
-            "status": "planned",
+            "status": "active",
             "description": (
-                "Placeholder for future real camera/YOLO-based vehicle detection. "
-                "Not implemented yet -- returns no signal. See "
-                "docs/ground_truth_final_state_and_gaps.md for the ground-truth ceiling metrics "
-                "real detection should be measured against."
+                "Detects vehicles on the overhead camera frame with a YOLO model trained on "
+                "simulation frames. Reports standing vehicles per approach and detected "
+                "emergency vehicles. Sees only the 900x900 frame."
             ),
             "created_at": now,
         },

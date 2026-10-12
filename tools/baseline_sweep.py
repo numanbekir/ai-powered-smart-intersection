@@ -77,6 +77,7 @@ def run_one(task):
         config["simulation_time"] = sim_time
 
     controller_version = None
+    state_provider_id = "ground_truth_v1"
     if mode == "fixed":
         yellow_time = config["fixed"]["yellow_time"]
         config["fixed"]["green_time"] = setting
@@ -86,13 +87,15 @@ def run_one(task):
     else:
         controller_version = ControllerVersionRegistry().get(setting)
         controller = setting
+        if controller_version.get("target_state_provider_type") == "yolo":
+            state_provider_id = "yolo_v1"
 
     engine = SimulationEngine(
         scenario=scenario,
         test_name=f"baseline_sweep__{scenario_id}__{controller}__seed_{seed}",
         controller_mode=mode,
         controller_version=controller_version,
-        state_provider_id="ground_truth_v1",
+        state_provider_id=state_provider_id,
         headless=True,
     )
     metrics = engine.run()["result"].get("metrics", {})
