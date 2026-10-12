@@ -1,0 +1,2578 @@
+[
+  {
+    "scenario_id": "balanced_traffic",
+    "scenario_name": "Balanced Traffic",
+    "description": "All directions have equal traffic density. Baseline comparison scenario.",
+    "is_default": true,
+    "is_locked": false,
+    "config": {
+      "fps": 60,
+      "simulation_time": 120,
+      "playback_speed": 1.0,
+      "spawn_interval": 3.81,
+      "random_seed": 42,
+      "allowed_vehicle_types": {
+        "car": true,
+        "bus": true,
+        "truck": true,
+        "bike": false
+      },
+      "vehicle_speeds": {
+        "car": 1.25,
+        "bus": 1.3,
+        "truck": 1.1,
+        "bike": 1.5,
+        "ambulance": 1.65,
+        "police": 1.7,
+        "firetruck": 1.35
+      },
+      "direction_density": {
+        "right": 25,
+        "down": 25,
+        "left": 25,
+        "up": 25
+      },
+      "road_vehicle_distribution": {
+        "right": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "down": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "left": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "up": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        }
+      },
+      "lane_turn_policy": {
+        "1": [
+          "straight",
+          "left"
+        ],
+        "2": [
+          "straight",
+          "right"
+        ]
+      },
+      "left_turn_probability": 0.25,
+      "right_turn_probability": 0.25,
+      "fixed": {
+        "initial_green": "right",
+        "green_time": 10,
+        "yellow_time": 3,
+        "red_time": 50
+      },
+      "emergency": {
+        "enabled": false,
+        "vehicle_types": {
+          "ambulance": true,
+          "police": true,
+          "firetruck": true
+        },
+        "spawn_probability": 0.03,
+        "min_spawn_gap": 20,
+        "max_active_emergency": 1,
+        "priority_enabled": true,
+        "priority_green_time": 12,
+        "priority_cooldown": 15
+      }
+    },
+    "created_at": "2026-05-14 00:00:00",
+    "updated_at": "2026-07-24 01:44:54",
+    "description_tr": "Tüm yönler eşit trafik yoğunluğuna sahip. Temel karşılaştırma senaryosu."
+  },
+  {
+    "scenario_id": "right_heavy_traffic",
+    "scenario_name": "Right Heavy Traffic",
+    "description": "Right direction has dominant demand. Tests whether adaptive controller prioritizes overloaded direction.",
+    "is_default": false,
+    "is_locked": true,
+    "config": {
+      "fps": 60,
+      "simulation_time": 120,
+      "playback_speed": 1.0,
+      "spawn_interval": 3.81,
+      "random_seed": 42,
+      "allowed_vehicle_types": {
+        "car": true,
+        "bus": true,
+        "truck": true,
+        "bike": false
+      },
+      "vehicle_speeds": {
+        "car": 1.25,
+        "bus": 1.3,
+        "truck": 1.1,
+        "bike": 1.5,
+        "ambulance": 1.65,
+        "police": 1.7,
+        "firetruck": 1.35
+      },
+      "direction_density": {
+        "right": 55,
+        "down": 15,
+        "left": 15,
+        "up": 15
+      },
+      "road_vehicle_distribution": {
+        "right": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "down": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "left": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "up": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        }
+      },
+      "lane_turn_policy": {
+        "1": [
+          "straight",
+          "left"
+        ],
+        "2": [
+          "straight",
+          "right"
+        ]
+      },
+      "left_turn_probability": 0.25,
+      "right_turn_probability": 0.25,
+      "fixed": {
+        "initial_green": "right",
+        "green_time": 10,
+        "yellow_time": 3,
+        "red_time": 50
+      },
+      "emergency": {
+        "enabled": false,
+        "vehicle_types": {
+          "ambulance": true,
+          "police": true,
+          "firetruck": true
+        },
+        "spawn_probability": 0.03,
+        "min_spawn_gap": 20,
+        "max_active_emergency": 1,
+        "priority_enabled": true,
+        "priority_green_time": 12,
+        "priority_cooldown": 15
+      }
+    },
+    "created_at": "2026-05-14 00:00:00",
+    "updated_at": "2026-07-24 01:44:54",
+    "description_tr": "Sağ yönde baskın talep var. Adaptif kontrolcünün aşırı yüklü yönü önceliklendirip önceliklendirmediğini test eder."
+  },
+  {
+    "scenario_id": "vertical_heavy_traffic",
+    "scenario_name": "Vertical Heavy Traffic",
+    "description": "Down and up directions are dominant. Tests adaptive response to vertical flow pressure.",
+    "is_default": false,
+    "is_locked": true,
+    "config": {
+      "fps": 60,
+      "simulation_time": 120,
+      "playback_speed": 1.0,
+      "spawn_interval": 3.81,
+      "random_seed": 42,
+      "allowed_vehicle_types": {
+        "car": true,
+        "bus": true,
+        "truck": true,
+        "bike": false
+      },
+      "vehicle_speeds": {
+        "car": 1.25,
+        "bus": 1.3,
+        "truck": 1.1,
+        "bike": 1.5,
+        "ambulance": 1.65,
+        "police": 1.7,
+        "firetruck": 1.35
+      },
+      "direction_density": {
+        "right": 10,
+        "down": 40,
+        "left": 10,
+        "up": 40
+      },
+      "road_vehicle_distribution": {
+        "right": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "down": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "left": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "up": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        }
+      },
+      "lane_turn_policy": {
+        "1": [
+          "straight",
+          "left"
+        ],
+        "2": [
+          "straight",
+          "right"
+        ]
+      },
+      "left_turn_probability": 0.25,
+      "right_turn_probability": 0.25,
+      "fixed": {
+        "initial_green": "right",
+        "green_time": 10,
+        "yellow_time": 3,
+        "red_time": 50
+      },
+      "emergency": {
+        "enabled": false,
+        "vehicle_types": {
+          "ambulance": true,
+          "police": true,
+          "firetruck": true
+        },
+        "spawn_probability": 0.03,
+        "min_spawn_gap": 20,
+        "max_active_emergency": 1,
+        "priority_enabled": true,
+        "priority_green_time": 12,
+        "priority_cooldown": 15
+      }
+    },
+    "created_at": "2026-05-14 00:00:00",
+    "updated_at": "2026-07-24 01:44:54",
+    "description_tr": "Aşağı ve yukarı yönler baskın. Adaptif kontrolcünün dikey akış baskısına tepkisini test eder."
+  },
+  {
+    "scenario_id": "peak_traffic",
+    "scenario_name": "Peak Traffic",
+    "description": "High congestion scenario with faster vehicle spawning. Tests queue build-up and controller stability.",
+    "is_default": false,
+    "is_locked": true,
+    "config": {
+      "fps": 60,
+      "simulation_time": 120,
+      "playback_speed": 1.0,
+      "spawn_interval": 2.33,
+      "random_seed": 42,
+      "allowed_vehicle_types": {
+        "car": true,
+        "bus": true,
+        "truck": true,
+        "bike": false
+      },
+      "vehicle_speeds": {
+        "car": 1.25,
+        "bus": 1.3,
+        "truck": 1.1,
+        "bike": 1.5,
+        "ambulance": 1.65,
+        "police": 1.7,
+        "firetruck": 1.35
+      },
+      "direction_density": {
+        "right": 25,
+        "down": 25,
+        "left": 25,
+        "up": 25
+      },
+      "road_vehicle_distribution": {
+        "right": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "down": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "left": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "up": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        }
+      },
+      "lane_turn_policy": {
+        "1": [
+          "straight",
+          "left"
+        ],
+        "2": [
+          "straight",
+          "right"
+        ]
+      },
+      "left_turn_probability": 0.25,
+      "right_turn_probability": 0.25,
+      "fixed": {
+        "initial_green": "right",
+        "green_time": 10,
+        "yellow_time": 3,
+        "red_time": 50
+      },
+      "emergency": {
+        "enabled": false,
+        "vehicle_types": {
+          "ambulance": true,
+          "police": true,
+          "firetruck": true
+        },
+        "spawn_probability": 0.03,
+        "min_spawn_gap": 20,
+        "max_active_emergency": 1,
+        "priority_enabled": true,
+        "priority_green_time": 12,
+        "priority_cooldown": 15
+      }
+    },
+    "created_at": "2026-05-14 00:00:00",
+    "updated_at": "2026-07-24 01:44:54",
+    "description_tr": "Daha hızlı araç doğuşuyla yüksek yoğunluklu senaryo. Kuyruk birikimini ve kontrolcü kararlılığını test eder."
+  },
+  {
+    "scenario_id": "low_traffic",
+    "scenario_name": "Low Traffic",
+    "description": "Low demand scenario. Tests whether adaptive controller avoids unnecessary long green phases.",
+    "is_default": false,
+    "is_locked": true,
+    "config": {
+      "fps": 60,
+      "simulation_time": 120,
+      "playback_speed": 1.0,
+      "spawn_interval": 5.98,
+      "random_seed": 42,
+      "allowed_vehicle_types": {
+        "car": true,
+        "bus": true,
+        "truck": true,
+        "bike": false
+      },
+      "vehicle_speeds": {
+        "car": 1.25,
+        "bus": 1.3,
+        "truck": 1.1,
+        "bike": 1.5,
+        "ambulance": 1.65,
+        "police": 1.7,
+        "firetruck": 1.35
+      },
+      "direction_density": {
+        "right": 25,
+        "down": 25,
+        "left": 25,
+        "up": 25
+      },
+      "road_vehicle_distribution": {
+        "right": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "down": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "left": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "up": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        }
+      },
+      "lane_turn_policy": {
+        "1": [
+          "straight",
+          "left"
+        ],
+        "2": [
+          "straight",
+          "right"
+        ]
+      },
+      "left_turn_probability": 0.25,
+      "right_turn_probability": 0.25,
+      "fixed": {
+        "initial_green": "right",
+        "green_time": 10,
+        "yellow_time": 3,
+        "red_time": 50
+      },
+      "emergency": {
+        "enabled": false,
+        "vehicle_types": {
+          "ambulance": true,
+          "police": true,
+          "firetruck": true
+        },
+        "spawn_probability": 0.03,
+        "min_spawn_gap": 20,
+        "max_active_emergency": 1,
+        "priority_enabled": true,
+        "priority_green_time": 12,
+        "priority_cooldown": 15
+      }
+    },
+    "created_at": "2026-05-14 00:00:00",
+    "updated_at": "2026-07-24 01:44:54",
+    "description_tr": "Düşük talep senaryosu. Adaptif kontrolcünün gereksiz uzun yeşil fazlardan kaçınıp kaçınmadığını test eder."
+  },
+  {
+    "scenario_id": "turn_heavy_traffic",
+    "scenario_name": "Turn Heavy Traffic",
+    "description": "High turning probability scenario. Tests lane, turn, and queue behavior under frequent turns.",
+    "is_default": false,
+    "is_locked": true,
+    "config": {
+      "fps": 60,
+      "simulation_time": 120,
+      "playback_speed": 1.0,
+      "spawn_interval": 3.81,
+      "random_seed": 42,
+      "allowed_vehicle_types": {
+        "car": true,
+        "bus": true,
+        "truck": true,
+        "bike": false
+      },
+      "vehicle_speeds": {
+        "car": 1.25,
+        "bus": 1.3,
+        "truck": 1.1,
+        "bike": 1.5,
+        "ambulance": 1.65,
+        "police": 1.7,
+        "firetruck": 1.35
+      },
+      "direction_density": {
+        "right": 25,
+        "down": 25,
+        "left": 25,
+        "up": 25
+      },
+      "road_vehicle_distribution": {
+        "right": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "down": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "left": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "up": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        }
+      },
+      "lane_turn_policy": {
+        "1": [
+          "straight",
+          "left"
+        ],
+        "2": [
+          "straight",
+          "right"
+        ]
+      },
+      "left_turn_probability": 0.45,
+      "right_turn_probability": 0.45,
+      "fixed": {
+        "initial_green": "right",
+        "green_time": 10,
+        "yellow_time": 3,
+        "red_time": 50
+      },
+      "emergency": {
+        "enabled": false,
+        "vehicle_types": {
+          "ambulance": true,
+          "police": true,
+          "firetruck": true
+        },
+        "spawn_probability": 0.03,
+        "min_spawn_gap": 20,
+        "max_active_emergency": 1,
+        "priority_enabled": true,
+        "priority_green_time": 12,
+        "priority_cooldown": 15
+      }
+    },
+    "created_at": "2026-05-14 00:00:00",
+    "updated_at": "2026-07-24 01:44:54",
+    "description_tr": "Yüksek dönüş olasılıklı senaryo. Sık dönüşler altında şerit, dönüş ve kuyruk davranışını test eder."
+  },
+  {
+    "scenario_id": "single_direction_traffic",
+    "scenario_name": "Single Direction Traffic",
+    "description": "Only one direction has active demand. Tests whether adaptive controller avoids empty-road green allocation.",
+    "is_default": false,
+    "is_locked": true,
+    "config": {
+      "fps": 60,
+      "simulation_time": 120,
+      "playback_speed": 1.0,
+      "spawn_interval": 3.22,
+      "random_seed": 42,
+      "allowed_vehicle_types": {
+        "car": true,
+        "bus": true,
+        "truck": true,
+        "bike": false
+      },
+      "vehicle_speeds": {
+        "car": 1.25,
+        "bus": 1.3,
+        "truck": 1.1,
+        "bike": 1.5,
+        "ambulance": 1.65,
+        "police": 1.7,
+        "firetruck": 1.35
+      },
+      "direction_density": {
+        "right": 0,
+        "down": 100,
+        "left": 0,
+        "up": 0
+      },
+      "road_vehicle_distribution": {
+        "right": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "down": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "left": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "up": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        }
+      },
+      "lane_turn_policy": {
+        "1": [
+          "straight",
+          "left"
+        ],
+        "2": [
+          "straight",
+          "right"
+        ]
+      },
+      "left_turn_probability": 0.25,
+      "right_turn_probability": 0.25,
+      "fixed": {
+        "initial_green": "down",
+        "green_time": 10,
+        "yellow_time": 3,
+        "red_time": 50
+      },
+      "emergency": {
+        "enabled": false,
+        "vehicle_types": {
+          "ambulance": true,
+          "police": true,
+          "firetruck": true
+        },
+        "spawn_probability": 0.03,
+        "min_spawn_gap": 20,
+        "max_active_emergency": 1,
+        "priority_enabled": true,
+        "priority_green_time": 12,
+        "priority_cooldown": 15
+      }
+    },
+    "created_at": "2026-05-17 00:00:00",
+    "updated_at": "2026-07-24 01:44:54",
+    "description_tr": "Yalnızca bir yönde aktif talep var. Adaptif kontrolcünün boş yola yeşil ayırmaktan kaçınıp kaçınmadığını test eder."
+  },
+  {
+    "scenario_id": "extreme_directional_traffic",
+    "scenario_name": "Extreme Directional Traffic",
+    "description": "One direction has extreme dominant demand. Tests dominant-flow protection and fairness overreaction.",
+    "is_default": false,
+    "is_locked": true,
+    "config": {
+      "fps": 60,
+      "simulation_time": 120,
+      "playback_speed": 1.0,
+      "spawn_interval": 3.81,
+      "random_seed": 42,
+      "allowed_vehicle_types": {
+        "car": true,
+        "bus": true,
+        "truck": true,
+        "bike": false
+      },
+      "vehicle_speeds": {
+        "car": 1.25,
+        "bus": 1.3,
+        "truck": 1.1,
+        "bike": 1.5,
+        "ambulance": 1.65,
+        "police": 1.7,
+        "firetruck": 1.35
+      },
+      "direction_density": {
+        "right": 85,
+        "down": 5,
+        "left": 5,
+        "up": 5
+      },
+      "road_vehicle_distribution": {
+        "right": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "down": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "left": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "up": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        }
+      },
+      "lane_turn_policy": {
+        "1": [
+          "straight",
+          "left"
+        ],
+        "2": [
+          "straight",
+          "right"
+        ]
+      },
+      "left_turn_probability": 0.25,
+      "right_turn_probability": 0.25,
+      "fixed": {
+        "initial_green": "right",
+        "green_time": 10,
+        "yellow_time": 3,
+        "red_time": 50
+      },
+      "emergency": {
+        "enabled": false,
+        "vehicle_types": {
+          "ambulance": true,
+          "police": true,
+          "firetruck": true
+        },
+        "spawn_probability": 0.03,
+        "min_spawn_gap": 20,
+        "max_active_emergency": 1,
+        "priority_enabled": true,
+        "priority_green_time": 12,
+        "priority_cooldown": 15
+      }
+    },
+    "created_at": "2026-05-17 00:00:00",
+    "updated_at": "2026-07-24 01:44:54",
+    "description_tr": "Bir yönde aşırı baskın talep var. Baskın-akış korumasını ve adalet aşırı-tepkisini test eder."
+  },
+  {
+    "scenario_id": "sparse_traffic",
+    "scenario_name": "Sparse Traffic",
+    "description": "Very low intermittent traffic. Tests unnecessary switching and idle green behavior.",
+    "is_default": false,
+    "is_locked": true,
+    "config": {
+      "fps": 60,
+      "simulation_time": 120,
+      "playback_speed": 1.0,
+      "spawn_interval": 10.46,
+      "random_seed": 42,
+      "allowed_vehicle_types": {
+        "car": true,
+        "bus": true,
+        "truck": true,
+        "bike": false
+      },
+      "vehicle_speeds": {
+        "car": 1.25,
+        "bus": 1.3,
+        "truck": 1.1,
+        "bike": 1.5,
+        "ambulance": 1.65,
+        "police": 1.7,
+        "firetruck": 1.35
+      },
+      "direction_density": {
+        "right": 40,
+        "down": 20,
+        "left": 0,
+        "up": 40
+      },
+      "road_vehicle_distribution": {
+        "right": {
+          "car": 50.0,
+          "bus": 25.0,
+          "truck": 25.0,
+          "bike": 0.0
+        },
+        "down": {
+          "car": 50.0,
+          "bus": 25.0,
+          "truck": 25.0,
+          "bike": 0.0
+        },
+        "left": {
+          "car": 50.0,
+          "bus": 25.0,
+          "truck": 25.0,
+          "bike": 0.0
+        },
+        "up": {
+          "car": 50.0,
+          "bus": 25.0,
+          "truck": 25.0,
+          "bike": 0.0
+        }
+      },
+      "lane_turn_policy": {
+        "1": [
+          "straight",
+          "left"
+        ],
+        "2": [
+          "straight",
+          "right"
+        ]
+      },
+      "left_turn_probability": 0.25,
+      "right_turn_probability": 0.25,
+      "fixed": {
+        "initial_green": "right",
+        "green_time": 10,
+        "yellow_time": 3,
+        "red_time": 50
+      },
+      "emergency": {
+        "enabled": false,
+        "vehicle_types": {
+          "ambulance": true,
+          "police": true,
+          "firetruck": true
+        },
+        "spawn_probability": 0.03,
+        "min_spawn_gap": 20,
+        "max_active_emergency": 1,
+        "priority_enabled": true,
+        "priority_green_time": 12
+      }
+    },
+    "created_at": "2026-05-17 00:00:00",
+    "updated_at": "2026-08-22 00:00:00",
+    "description_tr": "Çok düşük, aralıklı trafik. Gereksiz geçiş yapma ve boşta yeşil davranışını test eder."
+  },
+  {
+    "scenario_id": "idle_intersection",
+    "scenario_name": "Idle Intersection",
+    "description": "No active traffic demand. Tests whether adaptive controller avoids meaningless behavior under empty demand.",
+    "is_default": false,
+    "is_locked": true,
+    "config": {
+      "fps": 60,
+      "simulation_time": 120,
+      "playback_speed": 1.0,
+      "spawn_interval": 13.94,
+      "random_seed": 42,
+      "allowed_vehicle_types": {
+        "car": true,
+        "bus": true,
+        "truck": true,
+        "bike": false
+      },
+      "vehicle_speeds": {
+        "car": 1.25,
+        "bus": 1.3,
+        "truck": 1.1,
+        "bike": 1.5,
+        "ambulance": 1.65,
+        "police": 1.7,
+        "firetruck": 1.35
+      },
+      "direction_density": {
+        "right": 0,
+        "down": 0,
+        "left": 0,
+        "up": 0
+      },
+      "road_vehicle_distribution": {
+        "right": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "down": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "left": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "up": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        }
+      },
+      "lane_turn_policy": {
+        "1": [
+          "straight",
+          "left"
+        ],
+        "2": [
+          "straight",
+          "right"
+        ]
+      },
+      "left_turn_probability": 0.25,
+      "right_turn_probability": 0.25,
+      "fixed": {
+        "initial_green": "right",
+        "green_time": 10,
+        "yellow_time": 3,
+        "red_time": 50
+      },
+      "emergency": {
+        "enabled": false,
+        "vehicle_types": {
+          "ambulance": true,
+          "police": true,
+          "firetruck": true
+        },
+        "spawn_probability": 0.03,
+        "min_spawn_gap": 20,
+        "max_active_emergency": 1,
+        "priority_enabled": true,
+        "priority_green_time": 12,
+        "priority_cooldown": 15
+      }
+    },
+    "created_at": "2026-05-17 00:00:00",
+    "updated_at": "2026-07-24 01:44:54",
+    "description_tr": "Aktif trafik talebi yok. Adaptif kontrolcünün boş talep altında anlamsız davranıştan kaçınıp kaçınmadığını test eder."
+  },
+  {
+    "scenario_id": "direction_shift_traffic",
+    "scenario_name": "Direction Shift Traffic",
+    "description": "Traffic dominance shifts during simulation. Tests adaptive responsiveness to changing flow patterns.",
+    "is_default": false,
+    "is_locked": true,
+    "config": {
+      "fps": 60,
+      "simulation_time": 120,
+      "playback_speed": 1.0,
+      "spawn_interval": 3.81,
+      "random_seed": 42,
+      "direction_density": {
+        "right": 25,
+        "down": 25,
+        "left": 25,
+        "up": 25
+      },
+      "dynamic_density_schedule": [
+        {
+          "start_time": 0,
+          "end_time": 60,
+          "direction_density": {
+            "right": 70,
+            "down": 10,
+            "left": 10,
+            "up": 10
+          }
+        },
+        {
+          "start_time": 60,
+          "end_time": 120,
+          "direction_density": {
+            "right": 10,
+            "down": 40,
+            "left": 10,
+            "up": 40
+          }
+        }
+      ],
+      "allowed_vehicle_types": {
+        "car": true,
+        "bus": true,
+        "truck": true,
+        "bike": false
+      },
+      "vehicle_speeds": {
+        "car": 1.25,
+        "bus": 1.3,
+        "truck": 1.1,
+        "bike": 1.5,
+        "ambulance": 1.65,
+        "police": 1.7,
+        "firetruck": 1.35
+      },
+      "road_vehicle_distribution": {
+        "right": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "down": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "left": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "up": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        }
+      },
+      "lane_turn_policy": {
+        "1": [
+          "straight",
+          "left"
+        ],
+        "2": [
+          "straight",
+          "right"
+        ]
+      },
+      "left_turn_probability": 0.25,
+      "right_turn_probability": 0.25,
+      "fixed": {
+        "initial_green": "right",
+        "green_time": 10,
+        "yellow_time": 3,
+        "red_time": 50
+      },
+      "emergency": {
+        "enabled": false,
+        "vehicle_types": {
+          "ambulance": true,
+          "police": true,
+          "firetruck": true
+        },
+        "spawn_probability": 0.03,
+        "min_spawn_gap": 20,
+        "max_active_emergency": 1,
+        "priority_enabled": true,
+        "priority_green_time": 12,
+        "priority_cooldown": 15
+      }
+    },
+    "created_at": "2026-05-21 00:00:00",
+    "updated_at": "2026-07-24 01:44:54",
+    "description_tr": "Simülasyon sırasında trafik baskınlığı değişir. Adaptif kontrolcünün değişen akış örüntülerine tepkiselliğini test eder."
+  },
+  {
+    "scenario_id": "demand_shift_traffic",
+    "scenario_name": "Demand Shift Traffic",
+    "description": "Direction distribution stays constant (balanced) throughout; only overall demand magnitude (spawn_interval) alternates between sparse (v/c~0.20) and peak (v/c~0.90) every 30s. Complements direction_shift_traffic (which shifts direction only, constant magnitude) to isolate whether demand-magnitude regime shifts alone cause learned discharge_rate/arrival_rate parameters to go stale.",
+    "is_default": false,
+    "is_locked": true,
+    "config": {
+      "fps": 60,
+      "simulation_time": 120,
+      "playback_speed": 1.0,
+      "spawn_interval": 3.81,
+      "random_seed": 42,
+      "allowed_vehicle_types": {
+        "car": true,
+        "bus": true,
+        "truck": true,
+        "bike": false
+      },
+      "vehicle_speeds": {
+        "car": 1.25,
+        "bus": 1.3,
+        "truck": 1.1,
+        "bike": 1.5,
+        "ambulance": 1.65,
+        "police": 1.7,
+        "firetruck": 1.35
+      },
+      "direction_density": {
+        "right": 25,
+        "down": 25,
+        "left": 25,
+        "up": 25
+      },
+      "road_vehicle_distribution": {
+        "right": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "down": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "left": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "up": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        }
+      },
+      "lane_turn_policy": {
+        "1": [
+          "straight",
+          "left"
+        ],
+        "2": [
+          "straight",
+          "right"
+        ]
+      },
+      "left_turn_probability": 0.25,
+      "right_turn_probability": 0.25,
+      "fixed": {
+        "initial_green": "right",
+        "green_time": 10,
+        "yellow_time": 3,
+        "red_time": 50
+      },
+      "emergency": {
+        "enabled": false,
+        "vehicle_types": {
+          "ambulance": true,
+          "police": true,
+          "firetruck": true
+        },
+        "spawn_probability": 0.03,
+        "min_spawn_gap": 20,
+        "max_active_emergency": 1,
+        "priority_enabled": true,
+        "priority_green_time": 12,
+        "priority_cooldown": 15
+      },
+      "dynamic_spawn_interval_schedule": [
+        {
+          "start_time": 0.0,
+          "end_time": 30.0,
+          "spawn_interval": 10.46,
+          "source_scenario_id": "sparse_traffic"
+        },
+        {
+          "start_time": 30.0,
+          "end_time": 60.0,
+          "spawn_interval": 2.33,
+          "source_scenario_id": "peak_traffic"
+        },
+        {
+          "start_time": 60.0,
+          "end_time": 90.0,
+          "spawn_interval": 10.46,
+          "source_scenario_id": "sparse_traffic"
+        },
+        {
+          "start_time": 90.0,
+          "end_time": 120.0,
+          "spawn_interval": 2.33,
+          "source_scenario_id": "peak_traffic"
+        }
+      ]
+    },
+    "created_at": "2026-07-16 11:01:40",
+    "updated_at": "2026-07-24 01:44:54",
+    "description_tr": "Yön dağılımı simülasyon boyunca sabit (dengeli) kalır; sadece toplam talep büyüklüğü (spawn_interval) her 30 saniyede seyrek (v/c~0.20) ile peak (v/c~0.90) arasında değişir. direction_shift_traffic'i (sadece yön değişir, büyüklük sabit kalır) tamamlayarak, tek başına talep-büyüklüğü rejim değişikliklerinin öğrenilen discharge_rate/arrival_rate parametrelerini eskitip eskitmediğini izole eder."
+  },
+  {
+    "scenario_id": "burst_traffic",
+    "scenario_name": "Burst Traffic",
+    "description": "Sudden temporary traffic explosion. Tests congestion recovery and responsiveness.",
+    "is_default": false,
+    "is_locked": true,
+    "config": {
+      "fps": 60,
+      "simulation_time": 120,
+      "playback_speed": 1.0,
+      "spawn_interval": 3.22,
+      "random_seed": 42,
+      "direction_density": {
+        "right": 25,
+        "down": 25,
+        "left": 25,
+        "up": 25
+      },
+      "dynamic_density_schedule": [
+        {
+          "start_time": 0,
+          "end_time": 30,
+          "direction_density": {
+            "right": 25,
+            "down": 25,
+            "left": 25,
+            "up": 25
+          }
+        },
+        {
+          "start_time": 30,
+          "end_time": 50,
+          "direction_density": {
+            "right": 90,
+            "down": 5,
+            "left": 3,
+            "up": 2
+          }
+        },
+        {
+          "start_time": 50,
+          "end_time": 120,
+          "direction_density": {
+            "right": 25,
+            "down": 25,
+            "left": 25,
+            "up": 25
+          }
+        }
+      ],
+      "allowed_vehicle_types": {
+        "car": true,
+        "bus": true,
+        "truck": true,
+        "bike": false
+      },
+      "vehicle_speeds": {
+        "car": 1.25,
+        "bus": 1.3,
+        "truck": 1.1,
+        "bike": 1.5,
+        "ambulance": 1.65,
+        "police": 1.7,
+        "firetruck": 1.35
+      },
+      "road_vehicle_distribution": {
+        "right": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "down": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "left": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "up": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        }
+      },
+      "lane_turn_policy": {
+        "1": [
+          "straight",
+          "left"
+        ],
+        "2": [
+          "straight",
+          "right"
+        ]
+      },
+      "left_turn_probability": 0.25,
+      "right_turn_probability": 0.25,
+      "fixed": {
+        "initial_green": "right",
+        "green_time": 10,
+        "yellow_time": 3,
+        "red_time": 50
+      },
+      "emergency": {
+        "enabled": false,
+        "vehicle_types": {
+          "ambulance": true,
+          "police": true,
+          "firetruck": true
+        },
+        "spawn_probability": 0.03,
+        "min_spawn_gap": 20,
+        "max_active_emergency": 1,
+        "priority_enabled": true,
+        "priority_green_time": 12,
+        "priority_cooldown": 15
+      }
+    },
+    "created_at": "2026-05-21 00:00:00",
+    "updated_at": "2026-07-24 01:44:54",
+    "description_tr": "Ani, geçici trafik patlaması. Tıkanıklıktan toparlanmayı ve tepkiselliği test eder."
+  },
+  {
+    "scenario_id": "alternating_heavy_traffic",
+    "scenario_name": "Alternating Heavy Traffic",
+    "description": "Dominant direction changes periodically. Tests adaptability and oscillation resistance.",
+    "is_default": false,
+    "is_locked": true,
+    "config": {
+      "fps": 60,
+      "simulation_time": 120,
+      "playback_speed": 1.0,
+      "spawn_interval": 3.22,
+      "random_seed": 42,
+      "direction_density": {
+        "right": 25,
+        "down": 25,
+        "left": 25,
+        "up": 25
+      },
+      "dynamic_density_schedule": [
+        {
+          "start_time": 0,
+          "end_time": 30,
+          "direction_density": {
+            "right": 70,
+            "down": 10,
+            "left": 10,
+            "up": 10
+          }
+        },
+        {
+          "start_time": 30,
+          "end_time": 60,
+          "direction_density": {
+            "right": 10,
+            "down": 70,
+            "left": 10,
+            "up": 10
+          }
+        },
+        {
+          "start_time": 60,
+          "end_time": 90,
+          "direction_density": {
+            "right": 10,
+            "down": 10,
+            "left": 70,
+            "up": 10
+          }
+        },
+        {
+          "start_time": 90,
+          "end_time": 120,
+          "direction_density": {
+            "right": 10,
+            "down": 10,
+            "left": 10,
+            "up": 70
+          }
+        }
+      ],
+      "allowed_vehicle_types": {
+        "car": true,
+        "bus": true,
+        "truck": true,
+        "bike": false
+      },
+      "vehicle_speeds": {
+        "car": 1.25,
+        "bus": 1.3,
+        "truck": 1.1,
+        "bike": 1.5,
+        "ambulance": 1.65,
+        "police": 1.7,
+        "firetruck": 1.35
+      },
+      "road_vehicle_distribution": {
+        "right": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "down": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "left": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "up": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        }
+      },
+      "lane_turn_policy": {
+        "1": [
+          "straight",
+          "left"
+        ],
+        "2": [
+          "straight",
+          "right"
+        ]
+      },
+      "left_turn_probability": 0.25,
+      "right_turn_probability": 0.25,
+      "fixed": {
+        "initial_green": "right",
+        "green_time": 10,
+        "yellow_time": 3,
+        "red_time": 50
+      },
+      "emergency": {
+        "enabled": false,
+        "vehicle_types": {
+          "ambulance": true,
+          "police": true,
+          "firetruck": true
+        },
+        "spawn_probability": 0.03,
+        "min_spawn_gap": 20,
+        "max_active_emergency": 1,
+        "priority_enabled": true,
+        "priority_green_time": 12,
+        "priority_cooldown": 15
+      }
+    },
+    "created_at": "2026-05-21 00:00:00",
+    "updated_at": "2026-07-24 01:44:54",
+    "description_tr": "Baskın yön periyodik olarak değişir. Uyarlanabilirliği ve salınım direncini test eder."
+  },
+  {
+    "scenario_id": "asymmetric_peak_traffic",
+    "scenario_name": "Asymmetric Peak Traffic",
+    "description": "Highly asymmetric high-density traffic. Tests fairness and throughput balance under peak load.",
+    "is_default": false,
+    "is_locked": true,
+    "config": {
+      "fps": 60,
+      "simulation_time": 120,
+      "playback_speed": 1.0,
+      "spawn_interval": 2.33,
+      "random_seed": 42,
+      "direction_density": {
+        "right": 45,
+        "down": 35,
+        "left": 15,
+        "up": 5
+      },
+      "allowed_vehicle_types": {
+        "car": true,
+        "bus": true,
+        "truck": true,
+        "bike": false
+      },
+      "vehicle_speeds": {
+        "car": 1.25,
+        "bus": 1.3,
+        "truck": 1.1,
+        "bike": 1.5,
+        "ambulance": 1.65,
+        "police": 1.7,
+        "firetruck": 1.35
+      },
+      "road_vehicle_distribution": {
+        "right": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "down": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "left": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "up": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        }
+      },
+      "lane_turn_policy": {
+        "1": [
+          "straight",
+          "left"
+        ],
+        "2": [
+          "straight",
+          "right"
+        ]
+      },
+      "left_turn_probability": 0.25,
+      "right_turn_probability": 0.25,
+      "fixed": {
+        "initial_green": "right",
+        "green_time": 10,
+        "yellow_time": 3,
+        "red_time": 50
+      },
+      "emergency": {
+        "enabled": false,
+        "vehicle_types": {
+          "ambulance": true,
+          "police": true,
+          "firetruck": true
+        },
+        "spawn_probability": 0.03,
+        "min_spawn_gap": 20,
+        "max_active_emergency": 1,
+        "priority_enabled": true,
+        "priority_green_time": 12,
+        "priority_cooldown": 15
+      }
+    },
+    "created_at": "2026-05-21 00:00:00",
+    "updated_at": "2026-07-24 01:44:54",
+    "description_tr": "Yüksek oranda asimetrik, yüksek yoğunluklu trafik. Peak yük altında adaleti ve verim dengesini test eder."
+  },
+  {
+    "scenario_id": "turning_conflict_traffic",
+    "scenario_name": "Turning Conflict Traffic",
+    "description": "Heavy turning pressure scenario. Tests turning congestion and lane conflict handling.",
+    "is_default": false,
+    "is_locked": true,
+    "config": {
+      "fps": 60,
+      "simulation_time": 120,
+      "playback_speed": 1.0,
+      "spawn_interval": 3.22,
+      "random_seed": 42,
+      "direction_density": {
+        "right": 40,
+        "down": 40,
+        "left": 10,
+        "up": 10
+      },
+      "allowed_vehicle_types": {
+        "car": true,
+        "bus": true,
+        "truck": true,
+        "bike": false
+      },
+      "vehicle_speeds": {
+        "car": 1.25,
+        "bus": 1.3,
+        "truck": 1.1,
+        "bike": 1.5,
+        "ambulance": 1.65,
+        "police": 1.7,
+        "firetruck": 1.35
+      },
+      "road_vehicle_distribution": {
+        "right": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "down": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "left": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "up": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        }
+      },
+      "lane_turn_policy": {
+        "1": [
+          "straight",
+          "left"
+        ],
+        "2": [
+          "straight",
+          "right"
+        ]
+      },
+      "left_turn_probability": 0.65,
+      "right_turn_probability": 0.25,
+      "fixed": {
+        "initial_green": "right",
+        "green_time": 10,
+        "yellow_time": 3,
+        "red_time": 50
+      },
+      "emergency": {
+        "enabled": false,
+        "vehicle_types": {
+          "ambulance": true,
+          "police": true,
+          "firetruck": true
+        },
+        "spawn_probability": 0.03,
+        "min_spawn_gap": 20,
+        "max_active_emergency": 1,
+        "priority_enabled": true,
+        "priority_green_time": 12,
+        "priority_cooldown": 15
+      }
+    },
+    "created_at": "2026-05-21 00:00:00",
+    "updated_at": "2026-07-24 01:44:54",
+    "description_tr": "Yoğun dönüş baskısı olan senaryo. Dönüş tıkanıklığını ve şerit çakışması yönetimini test eder."
+  },
+  {
+    "scenario_id": "emergency_balanced_traffic",
+    "scenario_name": "Emergency Balanced Traffic",
+    "description": "Balanced traffic with emergency vehicle spawning enabled. Tests emergency priority behavior under normal demand.",
+    "is_default": false,
+    "is_locked": true,
+    "config": {
+      "fps": 60,
+      "simulation_time": 120,
+      "playback_speed": 1.0,
+      "spawn_interval": 9.34,
+      "random_seed": 42,
+      "allowed_vehicle_types": {
+        "car": true,
+        "bus": true,
+        "truck": true,
+        "bike": false
+      },
+      "vehicle_speeds": {
+        "car": 0.75,
+        "bus": 0.65,
+        "truck": 0.7,
+        "bike": 1.5,
+        "ambulance": 1.65,
+        "police": 1.7,
+        "firetruck": 1.35
+      },
+      "direction_density": {
+        "right": 25,
+        "down": 25,
+        "left": 25,
+        "up": 25
+      },
+      "road_vehicle_distribution": {
+        "right": {
+          "car": 50.0,
+          "bus": 25.0,
+          "truck": 25.0,
+          "bike": 0.0
+        },
+        "down": {
+          "car": 50.0,
+          "bus": 25.0,
+          "truck": 25.0,
+          "bike": 0.0
+        },
+        "left": {
+          "car": 50.0,
+          "bus": 25.0,
+          "truck": 25.0,
+          "bike": 0.0
+        },
+        "up": {
+          "car": 50.0,
+          "bus": 25.0,
+          "truck": 25.0,
+          "bike": 0.0
+        }
+      },
+      "lane_turn_policy": {
+        "1": [
+          "straight",
+          "left"
+        ],
+        "2": [
+          "straight",
+          "right"
+        ]
+      },
+      "left_turn_probability": 0.25,
+      "right_turn_probability": 0.25,
+      "fixed": {
+        "initial_green": "right",
+        "green_time": 10,
+        "yellow_time": 3,
+        "red_time": 50
+      },
+      "emergency": {
+        "enabled": false,
+        "vehicle_types": {
+          "ambulance": true,
+          "police": true,
+          "firetruck": true
+        },
+        "spawn_probability": 0.03,
+        "min_spawn_gap": 25,
+        "max_active_emergency": 1,
+        "priority_enabled": true,
+        "priority_green_time": 12
+      }
+    },
+    "created_at": "2026-05-24 00:00:00",
+    "updated_at": "2026-07-24 01:44:54",
+    "description_tr": "Acil durum aracı doğuşu aktifken dengeli trafik. Normal talep altında acil durum önceliği davranışını test eder."
+  },
+  {
+    "scenario_id": "emergency_right_heavy_traffic",
+    "scenario_name": "Emergency Right Heavy Traffic",
+    "description": "Right-heavy demand with emergency vehicles enabled. Tests whether priority logic works under directional pressure.",
+    "is_default": false,
+    "is_locked": true,
+    "config": {
+      "fps": 60,
+      "simulation_time": 120,
+      "playback_speed": 1.0,
+      "spawn_interval": 3.81,
+      "random_seed": 42,
+      "direction_density": {
+        "right": 55,
+        "down": 15,
+        "left": 15,
+        "up": 15
+      },
+      "allowed_vehicle_types": {
+        "car": true,
+        "bus": true,
+        "truck": true,
+        "bike": false
+      },
+      "vehicle_speeds": {
+        "car": 1.25,
+        "bus": 1.3,
+        "truck": 1.1,
+        "bike": 1.5,
+        "ambulance": 1.65,
+        "police": 1.7,
+        "firetruck": 1.35
+      },
+      "road_vehicle_distribution": {
+        "right": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "down": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "left": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "up": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        }
+      },
+      "lane_turn_policy": {
+        "1": [
+          "straight",
+          "left"
+        ],
+        "2": [
+          "straight",
+          "right"
+        ]
+      },
+      "left_turn_probability": 0.25,
+      "right_turn_probability": 0.25,
+      "fixed": {
+        "initial_green": "right",
+        "green_time": 10,
+        "yellow_time": 3,
+        "red_time": 50
+      },
+      "emergency": {
+        "enabled": true,
+        "vehicle_types": {
+          "ambulance": true,
+          "police": true,
+          "firetruck": true
+        },
+        "spawn_probability": 0.03,
+        "min_spawn_gap": 25,
+        "max_active_emergency": 1,
+        "priority_enabled": true,
+        "priority_green_time": 12,
+        "priority_cooldown": 15
+      }
+    },
+    "created_at": "2026-05-24 00:00:00",
+    "updated_at": "2026-07-24 01:44:54",
+    "description_tr": "Acil durum araçları aktifken sağ-ağırlıklı talep. Öncelik mantığının yönsel baskı altında çalışıp çalışmadığını test eder."
+  },
+  {
+    "scenario_id": "emergency_peak_traffic",
+    "scenario_name": "Emergency Peak Traffic",
+    "description": "Peak congestion with emergency vehicles. Tests emergency preemption under high queue pressure.",
+    "is_default": false,
+    "is_locked": true,
+    "config": {
+      "fps": 60,
+      "simulation_time": 120,
+      "playback_speed": 1.0,
+      "spawn_interval": 2.33,
+      "random_seed": 42,
+      "direction_density": {
+        "right": 25,
+        "down": 25,
+        "left": 25,
+        "up": 25
+      },
+      "allowed_vehicle_types": {
+        "car": true,
+        "bus": true,
+        "truck": true,
+        "bike": false
+      },
+      "vehicle_speeds": {
+        "car": 1.25,
+        "bus": 1.3,
+        "truck": 1.1,
+        "bike": 1.5,
+        "ambulance": 1.65,
+        "police": 1.7,
+        "firetruck": 1.35
+      },
+      "road_vehicle_distribution": {
+        "right": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "down": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "left": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "up": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        }
+      },
+      "lane_turn_policy": {
+        "1": [
+          "straight",
+          "left"
+        ],
+        "2": [
+          "straight",
+          "right"
+        ]
+      },
+      "left_turn_probability": 0.25,
+      "right_turn_probability": 0.25,
+      "fixed": {
+        "initial_green": "right",
+        "green_time": 10,
+        "yellow_time": 3,
+        "red_time": 50
+      },
+      "emergency": {
+        "enabled": true,
+        "vehicle_types": {
+          "ambulance": true,
+          "police": true,
+          "firetruck": true
+        },
+        "spawn_probability": 0.05,
+        "min_spawn_gap": 25,
+        "max_active_emergency": 1,
+        "priority_enabled": true,
+        "priority_green_time": 12,
+        "priority_cooldown": 15
+      }
+    },
+    "created_at": "2026-05-24 00:00:00",
+    "updated_at": "2026-07-24 01:44:54",
+    "description_tr": "Acil durum araçlarıyla peak tıkanıklık. Yüksek kuyruk baskısı altında acil durum önceliğini (preemption) test eder."
+  },
+  {
+    "scenario_id": "emergency_sparse_traffic",
+    "scenario_name": "Emergency Sparse Traffic",
+    "description": "Sparse traffic with emergency vehicles. Tests whether emergency priority avoids unnecessary delay in low traffic.",
+    "is_default": false,
+    "is_locked": true,
+    "config": {
+      "fps": 60,
+      "simulation_time": 120,
+      "playback_speed": 1.0,
+      "spawn_interval": 10.46,
+      "random_seed": 42,
+      "direction_density": {
+        "right": 40,
+        "down": 20,
+        "left": 0,
+        "up": 40
+      },
+      "allowed_vehicle_types": {
+        "car": true,
+        "bus": true,
+        "truck": true,
+        "bike": false
+      },
+      "vehicle_speeds": {
+        "car": 1.25,
+        "bus": 1.3,
+        "truck": 1.1,
+        "bike": 1.5,
+        "ambulance": 1.65,
+        "police": 1.7,
+        "firetruck": 1.35
+      },
+      "road_vehicle_distribution": {
+        "right": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "down": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "left": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "up": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        }
+      },
+      "lane_turn_policy": {
+        "1": [
+          "straight",
+          "left"
+        ],
+        "2": [
+          "straight",
+          "right"
+        ]
+      },
+      "left_turn_probability": 0.25,
+      "right_turn_probability": 0.25,
+      "fixed": {
+        "initial_green": "right",
+        "green_time": 10,
+        "yellow_time": 3,
+        "red_time": 50
+      },
+      "emergency": {
+        "enabled": true,
+        "vehicle_types": {
+          "ambulance": true,
+          "police": true,
+          "firetruck": true
+        },
+        "spawn_probability": 0.02,
+        "min_spawn_gap": 25,
+        "max_active_emergency": 1,
+        "priority_enabled": true,
+        "priority_green_time": 12,
+        "priority_cooldown": 15
+      }
+    },
+    "created_at": "2026-05-24 00:00:00",
+    "updated_at": "2026-07-24 01:44:54",
+    "description_tr": "Acil durum araçlarıyla seyrek trafik. Acil durum önceliğinin düşük trafikte gereksiz gecikmeden kaçınıp kaçınmadığını test eder."
+  },
+  {
+    "scenario_id": "emergency_low_frequency_mixed_traffic",
+    "scenario_name": "Emergency Low Frequency Mixed Traffic",
+    "description": "Mixed urban traffic with realistically rare emergency vehicles. Designed to measure whether emergency prioritization improves emergency wait time without heavily degrading normal traffic flow.",
+    "is_default": false,
+    "is_locked": true,
+    "config": {
+      "fps": 60,
+      "simulation_time": 180,
+      "playback_speed": 1.0,
+      "spawn_interval": 4.65,
+      "random_seed": 42,
+      "allowed_vehicle_types": {
+        "car": true,
+        "bus": true,
+        "truck": true,
+        "bike": false
+      },
+      "vehicle_speeds": {
+        "car": 1.25,
+        "bus": 1.3,
+        "truck": 1.1,
+        "bike": 1.5,
+        "ambulance": 1.65,
+        "police": 1.7,
+        "firetruck": 1.35
+      },
+      "direction_density": {
+        "right": 35,
+        "down": 20,
+        "left": 25,
+        "up": 20
+      },
+      "road_vehicle_distribution": {
+        "right": {
+          "car": 55,
+          "bus": 20,
+          "truck": 25,
+          "bike": 0
+        },
+        "down": {
+          "car": 60,
+          "bus": 20,
+          "truck": 20,
+          "bike": 0
+        },
+        "left": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "up": {
+          "car": 60,
+          "bus": 15,
+          "truck": 25,
+          "bike": 0
+        }
+      },
+      "lane_turn_policy": {
+        "1": [
+          "straight",
+          "left"
+        ],
+        "2": [
+          "straight",
+          "right"
+        ]
+      },
+      "left_turn_probability": 0.25,
+      "right_turn_probability": 0.25,
+      "fixed": {
+        "initial_green": "right",
+        "green_time": 10,
+        "yellow_time": 3,
+        "red_time": 50
+      },
+      "emergency": {
+        "enabled": true,
+        "vehicle_types": {
+          "ambulance": true,
+          "police": true,
+          "firetruck": true
+        },
+        "spawn_probability": 0.015,
+        "min_spawn_gap": 40,
+        "max_active_emergency": 1,
+        "priority_enabled": true,
+        "priority_green_time": 8,
+        "priority_cooldown": 20
+      }
+    },
+    "created_at": "2026-05-24 00:00:00",
+    "updated_at": "2026-07-24 01:44:54",
+    "description_tr": "Gerçekçi şekilde nadir acil durum araçları olan karma şehir trafiği. Acil durum önceliklendirmesinin, normal trafik akışını ciddi şekilde bozmadan acil durum bekleme süresini iyileştirip iyileştirmediğini ölçmek için tasarlandı."
+  },
+  {
+    "scenario_id": "mixed_master_scenario",
+    "scenario_name": "Mixed Master Scenario",
+    "description": "Tum diger senaryolarin (direction_density + spawn_interval) rastgele sirayla, 90'ar saniyelik fazlar halinde birlestirildigi, uzun sureli (rejim-degisimi testi icin) senaryo. Faz sirasi sabit bir seed ile bir kez karistirilip buraya gomulmustur (her kosuda yeniden karisilmiyor). Emergency ayarlari emergency_balanced_traffic'ten alinip tum kosu boyunca sabit/aktif tutulur.",
+    "is_default": false,
+    "is_locked": true,
+    "config": {
+      "fps": 60,
+      "simulation_time": 1800.0,
+      "playback_speed": 1.0,
+      "spawn_interval": 3.81,
+      "random_seed": 42,
+      "allowed_vehicle_types": {
+        "car": true,
+        "bus": true,
+        "truck": true,
+        "bike": false
+      },
+      "vehicle_speeds": {
+        "car": 1.25,
+        "bus": 1.3,
+        "truck": 1.1,
+        "bike": 1.5,
+        "ambulance": 1.65,
+        "police": 1.7,
+        "firetruck": 1.35
+      },
+      "direction_density": {
+        "right": 25,
+        "down": 25,
+        "left": 25,
+        "up": 25
+      },
+      "road_vehicle_distribution": {
+        "right": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "down": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "left": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        },
+        "up": {
+          "car": 50,
+          "bus": 25,
+          "truck": 25,
+          "bike": 0
+        }
+      },
+      "lane_turn_policy": {
+        "1": [
+          "straight",
+          "left"
+        ],
+        "2": [
+          "straight",
+          "right"
+        ]
+      },
+      "left_turn_probability": 0.25,
+      "right_turn_probability": 0.25,
+      "fixed": {
+        "initial_green": "right",
+        "green_time": 10,
+        "yellow_time": 3,
+        "red_time": 50
+      },
+      "emergency": {
+        "enabled": true,
+        "vehicle_types": {
+          "ambulance": true,
+          "police": true,
+          "firetruck": true
+        },
+        "spawn_probability": 0.03,
+        "min_spawn_gap": 25,
+        "max_active_emergency": 1,
+        "priority_enabled": true,
+        "priority_green_time": 12,
+        "priority_cooldown": 15
+      },
+      "dynamic_density_schedule": [
+        {
+          "start_time": 0.0,
+          "end_time": 90.0,
+          "direction_density": {
+            "right": 25,
+            "down": 25,
+            "left": 25,
+            "up": 25
+          },
+          "source_scenario_id": "direction_shift_traffic"
+        },
+        {
+          "start_time": 90.0,
+          "end_time": 180.0,
+          "direction_density": {
+            "right": 40,
+            "down": 20,
+            "left": 0,
+            "up": 40
+          },
+          "source_scenario_id": "sparse_traffic"
+        },
+        {
+          "start_time": 180.0,
+          "end_time": 270.0,
+          "direction_density": {
+            "right": 25,
+            "down": 25,
+            "left": 25,
+            "up": 25
+          },
+          "source_scenario_id": "peak_traffic"
+        },
+        {
+          "start_time": 270.0,
+          "end_time": 360.0,
+          "direction_density": {
+            "right": 0,
+            "down": 100,
+            "left": 0,
+            "up": 0
+          },
+          "source_scenario_id": "single_direction_traffic"
+        },
+        {
+          "start_time": 360.0,
+          "end_time": 450.0,
+          "direction_density": {
+            "right": 25,
+            "down": 25,
+            "left": 25,
+            "up": 25
+          },
+          "source_scenario_id": "low_traffic"
+        },
+        {
+          "start_time": 450.0,
+          "end_time": 540.0,
+          "direction_density": {
+            "right": 45,
+            "down": 35,
+            "left": 15,
+            "up": 5
+          },
+          "source_scenario_id": "asymmetric_peak_traffic"
+        },
+        {
+          "start_time": 540.0,
+          "end_time": 630.0,
+          "direction_density": {
+            "right": 25,
+            "down": 25,
+            "left": 25,
+            "up": 25
+          },
+          "source_scenario_id": "emergency_balanced_traffic"
+        },
+        {
+          "start_time": 630.0,
+          "end_time": 720.0,
+          "direction_density": {
+            "right": 25,
+            "down": 25,
+            "left": 25,
+            "up": 25
+          },
+          "source_scenario_id": "emergency_peak_traffic"
+        },
+        {
+          "start_time": 720.0,
+          "end_time": 810.0,
+          "direction_density": {
+            "right": 25,
+            "down": 25,
+            "left": 25,
+            "up": 25
+          },
+          "source_scenario_id": "turn_heavy_traffic"
+        },
+        {
+          "start_time": 810.0,
+          "end_time": 900.0,
+          "direction_density": {
+            "right": 55,
+            "down": 15,
+            "left": 15,
+            "up": 15
+          },
+          "source_scenario_id": "emergency_right_heavy_traffic"
+        },
+        {
+          "start_time": 900.0,
+          "end_time": 990.0,
+          "direction_density": {
+            "right": 40,
+            "down": 40,
+            "left": 10,
+            "up": 10
+          },
+          "source_scenario_id": "turning_conflict_traffic"
+        },
+        {
+          "start_time": 990.0,
+          "end_time": 1080.0,
+          "direction_density": {
+            "right": 25,
+            "down": 25,
+            "left": 25,
+            "up": 25
+          },
+          "source_scenario_id": "alternating_heavy_traffic"
+        },
+        {
+          "start_time": 1080.0,
+          "end_time": 1170.0,
+          "direction_density": {
+            "right": 25,
+            "down": 25,
+            "left": 25,
+            "up": 25
+          },
+          "source_scenario_id": "balanced_traffic"
+        },
+        {
+          "start_time": 1170.0,
+          "end_time": 1260.0,
+          "direction_density": {
+            "right": 85,
+            "down": 5,
+            "left": 5,
+            "up": 5
+          },
+          "source_scenario_id": "extreme_directional_traffic"
+        },
+        {
+          "start_time": 1260.0,
+          "end_time": 1350.0,
+          "direction_density": {
+            "right": 40,
+            "down": 20,
+            "left": 0,
+            "up": 40
+          },
+          "source_scenario_id": "emergency_sparse_traffic"
+        },
+        {
+          "start_time": 1350.0,
+          "end_time": 1440.0,
+          "direction_density": {
+            "right": 25,
+            "down": 25,
+            "left": 25,
+            "up": 25
+          },
+          "source_scenario_id": "burst_traffic"
+        },
+        {
+          "start_time": 1440.0,
+          "end_time": 1530.0,
+          "direction_density": {
+            "right": 55,
+            "down": 15,
+            "left": 15,
+            "up": 15
+          },
+          "source_scenario_id": "right_heavy_traffic"
+        },
+        {
+          "start_time": 1530.0,
+          "end_time": 1620.0,
+          "direction_density": {
+            "right": 0,
+            "down": 0,
+            "left": 0,
+            "up": 0
+          },
+          "source_scenario_id": "idle_intersection"
+        },
+        {
+          "start_time": 1620.0,
+          "end_time": 1710.0,
+          "direction_density": {
+            "right": 35,
+            "down": 20,
+            "left": 25,
+            "up": 20
+          },
+          "source_scenario_id": "emergency_low_frequency_mixed_traffic"
+        },
+        {
+          "start_time": 1710.0,
+          "end_time": 1800.0,
+          "direction_density": {
+            "right": 10,
+            "down": 40,
+            "left": 10,
+            "up": 40
+          },
+          "source_scenario_id": "vertical_heavy_traffic"
+        }
+      ],
+      "dynamic_spawn_interval_schedule": [
+        {
+          "start_time": 0.0,
+          "end_time": 90.0,
+          "spawn_interval": 3.81,
+          "source_scenario_id": "direction_shift_traffic"
+        },
+        {
+          "start_time": 90.0,
+          "end_time": 180.0,
+          "spawn_interval": 10.46,
+          "source_scenario_id": "sparse_traffic"
+        },
+        {
+          "start_time": 180.0,
+          "end_time": 270.0,
+          "spawn_interval": 2.33,
+          "source_scenario_id": "peak_traffic"
+        },
+        {
+          "start_time": 270.0,
+          "end_time": 360.0,
+          "spawn_interval": 3.22,
+          "source_scenario_id": "single_direction_traffic"
+        },
+        {
+          "start_time": 360.0,
+          "end_time": 450.0,
+          "spawn_interval": 5.98,
+          "source_scenario_id": "low_traffic"
+        },
+        {
+          "start_time": 450.0,
+          "end_time": 540.0,
+          "spawn_interval": 2.33,
+          "source_scenario_id": "asymmetric_peak_traffic"
+        },
+        {
+          "start_time": 540.0,
+          "end_time": 630.0,
+          "spawn_interval": 3.81,
+          "source_scenario_id": "emergency_balanced_traffic"
+        },
+        {
+          "start_time": 630.0,
+          "end_time": 720.0,
+          "spawn_interval": 2.33,
+          "source_scenario_id": "emergency_peak_traffic"
+        },
+        {
+          "start_time": 720.0,
+          "end_time": 810.0,
+          "spawn_interval": 3.81,
+          "source_scenario_id": "turn_heavy_traffic"
+        },
+        {
+          "start_time": 810.0,
+          "end_time": 900.0,
+          "spawn_interval": 3.81,
+          "source_scenario_id": "emergency_right_heavy_traffic"
+        },
+        {
+          "start_time": 900.0,
+          "end_time": 990.0,
+          "spawn_interval": 3.22,
+          "source_scenario_id": "turning_conflict_traffic"
+        },
+        {
+          "start_time": 990.0,
+          "end_time": 1080.0,
+          "spawn_interval": 3.22,
+          "source_scenario_id": "alternating_heavy_traffic"
+        },
+        {
+          "start_time": 1080.0,
+          "end_time": 1170.0,
+          "spawn_interval": 3.81,
+          "source_scenario_id": "balanced_traffic"
+        },
+        {
+          "start_time": 1170.0,
+          "end_time": 1260.0,
+          "spawn_interval": 3.81,
+          "source_scenario_id": "extreme_directional_traffic"
+        },
+        {
+          "start_time": 1260.0,
+          "end_time": 1350.0,
+          "spawn_interval": 10.46,
+          "source_scenario_id": "emergency_sparse_traffic"
+        },
+        {
+          "start_time": 1350.0,
+          "end_time": 1440.0,
+          "spawn_interval": 3.22,
+          "source_scenario_id": "burst_traffic"
+        },
+        {
+          "start_time": 1440.0,
+          "end_time": 1530.0,
+          "spawn_interval": 3.81,
+          "source_scenario_id": "right_heavy_traffic"
+        },
+        {
+          "start_time": 1530.0,
+          "end_time": 1620.0,
+          "spawn_interval": 13.94,
+          "source_scenario_id": "idle_intersection"
+        },
+        {
+          "start_time": 1620.0,
+          "end_time": 1710.0,
+          "spawn_interval": 4.65,
+          "source_scenario_id": "emergency_low_frequency_mixed_traffic"
+        },
+        {
+          "start_time": 1710.0,
+          "end_time": 1800.0,
+          "spawn_interval": 3.81,
+          "source_scenario_id": "vertical_heavy_traffic"
+        }
+      ]
+    },
+    "created_at": "2026-07-14 11:53:33",
+    "updated_at": "2026-07-24 01:44:54",
+    "description_tr": "Tüm diğer senaryoların (yön yoğunluğu + doğuş aralığı) rastgele sırayla, 90'ar saniyelik fazlar halinde birleştirildiği, uzun süreli (rejim-değişimi testi için) senaryo. Faz sırası sabit bir seed ile bir kez karıştırılıp buraya gömülmüştür (her koşuda yeniden karışılmaz). Acil durum ayarları emergency_balanced_traffic'ten alınıp tüm koşu boyunca sabit/aktif tutulur."
+  }
+]

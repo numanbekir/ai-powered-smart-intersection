@@ -1,0 +1,25 @@
+video_dosyasi,kavsak,yon,faz_no,yesil_baslangic_sn,ilk_arac_gecis_sn,yesil_bitis_sn,bosalan_arac_sayisi,not,serit sayısı
+ornek_video1.mp4,kavsak-1,batı,1,2,4,45,18,"sadece kuyruktaki araçlar değil, cok daha arkadan gelen araçlar da boşaldı",2
+ornek_video1.mp4,kavsak-1,güney,1,48,50,1 dk 8 sn,8,,2
+ornek_video1.mp4,kavsak-1,kuzey,1,1 dk 10 sn,1 dk 12 sn,1 dk 28 sn,8,,2
+ornek_video1.mp4,kavsak-1,batı,2,1 dkı 30 sn,1 dk 34 sn,1 dk 58 sn,15,video bittiği için yeşil fazı bitmeden kapanıyor. mevcut yeşil fazında görünen geçen araç sayısını not ettim,2
+,,,,,,,,,
+ornek_video2.mp4,kavsak-2,kuzey,1,0 dk 15 sn,0 dk 18 sn,0 dk 32 sn,8,"mevcut bir kuyrukta max geçim süresi olarak değil, kuyruktaki araç boşaldı ve yolda başka araç kalmadı",2
+ornek_video2.mp4,kavsak-2,doğu,1,0 dk 35 sn,0 dk 38 sn,0 dk 54  sn,9,"mevcut bir kuyrukta max geçim süresi olarak değil, kuyruktaki araç boşaldı ve yolda başka araç kalmadı",2
+ornek_video2.mp4,kavsak-2,güney,1,0 dk 56 sn,1 dk,1 dk 12 sn,5,,1
+ornek_video2.mp4,kavsak-2,batı,1,1 dk 14 sn,1 dk 16 sn,1 dk 32 sn,5,"mevcut bir kuyrukta max geçim süresi olarak değil, kuyruktaki araç boşaldı ve yolda başka araç kalmadı",2
+ornek_video2.mp4,kavsak-2,kuzey,2,1 dk 36 sn,1 dk 39 sn,1 dk 54 sn,2,"mevcut bir kuyrukta max geçim süresi olarak değil, kuyruktaki araç boşaldı ve yolda başka araç kalmadı",2
+ornek_video2.mp4,kavsak-2,doğu,2,1 dk 56 sn,1 dk 58 sn,2 dk 14 sn,10,,2
+ornek_video2.mp4,kavsak-2,güney,2,2 dk 16 sn,2 dk 19 sn,2 dk 31 sn,5,,1
+ornek_video2.mp4,kavsak-2,batı,2,2 dk 34 sn,2 dk 37 sn,2 dk 54 sn,10,,2
+ornek_video2.mp4,kavsak-2,kuzey,3,2 dk 56 sn,2 dk 59 sn,3 dk 14 sn,11,,2
+ornek_video2.mp4,kavsak-2,doğu,3,3 dk 16 sn,3 dk 19 sn,3 dk 34 sn,9,,2
+ornek_video2.mp4,kavsak-2,güney,3,3 dk 36 sn,3 dk 40 sn,3 dk 52 sn,6,,1
+ornek_video2.mp4,kavsak-2,batı,3,3 dk 54 sn,3 dk 58 sn,4 dk 16 sn,10,,2
+ornek_video2.mp4,kavsak-2,kuzey,4,4 fk 18 sn,4 dk 21 sn,4 dk 38 sn,11,,2
+ornek_video2.mp4,kavsak-2,doğu,4,4 fk 40 sn,4 dk 42 sn,4 dk 56 sn,10,,2
+ornek_video2.mp4,kavsak-2,güney,4,4 fk 58 sn,5 dk 03 sn,5 dk 15 sn,7,,1
+,,,,,,,,,
+ornek_video3.mp4,kavsak-3,kuzey,1,11 sn,13 sn,46 sn,16,,2
+ornek_video3.mp4,kavsak-3,kuzey,2,1 dk 50 sn,1 dk 53 sn,2 dk 14 sn,14,,2
+ornek_video3.mp4,kavsak-3,kuzey,3,3 dk 31 sn,3 dk 34 sn,3 dk 56 sn,14,,2

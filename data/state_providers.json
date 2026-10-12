@@ -1,0 +1,18 @@
+[
+  {
+    "provider_id": "ground_truth_v1",
+    "display_name": "Ground Truth Provider",
+    "provider_type": "ground_truth",
+    "status": "active",
+    "description": "Reads all waiting vehicles directly from the simulation state.",
+    "description_tr": "Bekleyen tüm araçları simülasyon durumundan doğrudan okur."
+  },
+  {
+    "provider_id": "yolo_v1",
+    "display_name": "YOLO Provider",
+    "provider_type": "yolo",
+    "status": "planned",
+    "description": "Placeholder for future real camera/YOLO-based vehicle detection. Not implemented yet -- returns no signal. See docs/ground_truth_final_state_and_gaps.md for the ground-truth ceiling metrics real detection should be measured against.",
+    "description_tr": "Gelecekteki gerçek kamera/YOLO tabanlı araç algılaması için yer tutucu. Henüz uygulanmadı -- hiçbir sinyal döndürmez. Gerçek algılamanın karşılaştırılması gereken ground-truth tavan metrikleri için docs/ground_truth_final_state_and_gaps.md'ye bakın."
+  }
+]
