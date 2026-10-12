@@ -28,6 +28,19 @@ Ground truth'un tam-bilgi avantajını (her aracın konumu, hızı, bekleme sür
 - **Emergency:** `params.emergency_priority_enabled` (varsayılan `True`) açıkken, ETA'ya dayalı **gerçek** mid-phase preemption (`should_preempt`) ve hold (`get_green_extension`) — sabit bir süre değil, ground truth'taki konum/hız verisinden hesaplanan kesin süre. **Kapalıyken** (`False`) emergency araçlar hiçbir özel muamele görmez: state zaten tip ayrımı yapmadan tüm araçları saydığından (`ground_truth_provider.get_state()`), emergency araçlar otomatik olarak normal kuyruk üyesi gibi işlenir — ekstra kod dalı gerekmez.
 - **Açlık koruması (opsiyonel, değeri versiyona göre değişir):** `params.emergency_starvation_override_limit` verilmişse, emergency önceliği vermeden önce `other_direction_severely_starving()` başka bir yönün zaten kritik derecede aç olup olmadığını kontrol eder — kendi kuyruğuna sıkışıp yavaş ilerleyen bir emergency aracın her karar turunda aynı yönü kazanıp diğer tüm yönleri sınırsız aç bırakmasını engeller (`mixed_master_scenario` ile bulunup v1'de düzeltilen hata). v1'de bu değer 60s; v2'de 90s'ye gevşetildi — bir parametre taramasıyla bulundu: standart (kısa) senaryolarda hiç tetiklenmediği, ama `mixed_master_scenario` gibi çok uzun/sürekli senaryolarda normal trafiği v1 seviyesinde tuttuğu için seçildi. Parametre hiç verilmezse bu koruma tamamen devre dışı kalır (koşulsuz öncelik) — v2 ilk denemede bu şekilde test edildi ve `mixed_master_scenario`'da ciddi bir normal-trafik regresyonuna yol açtığı ölçüldü, bu yüzden nihai v2 koşulsuz değil, 90s limitli.
 
+### v3 pratikte ne yapıyor
+
+Yukarıdaki formüller doğru ama pratikteki davranışı olduğundan daha "adaptif" gösterebilir, o yüzden ölçülen davranış burada açıkça yazılıdır:
+
+- **Yeşil süresi neredeyse sabit.** 2+ yön aktifken süre `multi_direction_max_green` (6 sn) tavanına takılır. Ölçülen kararların yaklaşık %90-99'unda yeşil 5-8 sn aralığında, ortalaması 6,2 sn civarında. Yani v3 yeşil süresini trafiğe göre anlamlı biçimde uzatıp kısaltmıyor.
+- **Kazancın kaynağı sıralama.** Fark iki şeyden geliyor: aracı olmayan yöne yeşil vermemek ve yönleri kuyruğa göre sıralamak. Trafik yönlere eşit dağıldığında bu ikisinin sağladığı avantaj küçülür ve v3, 6 sn'lik sabit süreli kontrole yakın davranır (bkz. `docs/ground_truth_final_state_and_gaps.md` Bölüm 2).
+- **v1 ve v2 aynı karar mantığı.** İkisi yalnızca acil durum parametrelerinde ayrışır.
+
+### Acil durum önceliğinin kapsamı
+
+- **Öncelik, araç durduktan sonra başlar.** Kırmızıda bekleyen acil durum aracı için faz değiştirilir. Yaklaşmakta olan ama henüz durmamış araç için önceden yeşil hazırlanmaz.
+- **Yeşil uzatması (hold):** yeşil yanan yönde acil durum aracı varsa ve kalan uzatma bütçesi içinde geçebilecekse yeşil o kadar uzatılır. Geçemeyecekse uzatılmaz. Bu dal 2026-10 öncesinde hiç çalışmıyordu: arama yalnızca kırmızıda bekleyen araçları buluyordu, yeşildeki araç bulunamadığı için `emergency_hold_count` yayınlanan tüm sonuçlarda 0'dı.
+
 `optimal_ground_truth`, `ground_truth` provider'ının tam bilgi avantajını (kesin konum/hız) doğrudan kullandığı için **tasarım gereği** `yolo` ile uyumlu değildir — bu bir eksiklik değil, "ground_truth = tam bilgiyle ulaşılabilecek tavan" rolünün doğal sonucu.
 
 ## `adaptive_optimal_ground_truth_v2` ve `multi_direction_max_green` clamp'i neden gevşetilmedi

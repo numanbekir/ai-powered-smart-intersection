@@ -10,6 +10,12 @@ kapatması/karşılaşacağı somut boşlukları — tek bir yerde toplamak.
 Bu projenin daha önceki bir kalibrasyon-öncesi tavan dokümanının yerini alır;
 YOLO fazına başlarken ilk okunması gereken doküman burasıdır.
 
+> **2026-10-12 güncellemesi:** Bölüm 2 yeni ölçüm yöntemiyle baştan
+> yazıldı ve aşağıdaki iki eski güncelleme notunun anlattığı tablonun
+> yerini aldı. Bu belgenin başka yerlerinde eski tabloya dayanan
+> ifadeler ("her senaryoda adaptif önde" gibi) Bölüm 2 ile çelişirse
+> Bölüm 2 geçerlidir.
+>
 > **2026-07-24 güncellemesi:** Bölüm 2'deki tablo, gerçek kavşak
 > kayıtlarıyla kalibre edilmiş motor fiziğiyle (bkz.
 > `docs/scenario_capacity_calibration.md`'nin "2026-07-24: Gerçek Dünya
@@ -59,62 +65,78 @@ oturumda kapsamlı şekilde denendi. Özet:
   önerilen kontrolcüleri: tek-adım karar için `adaptive_optimal_ground_truth_v3`,
   çok-adım/ileriye-bakan karar için `adaptive_rolling_horizon_ground_truth` (v1).
 
-## 2. Nihai metrik tavanı (22 senaryo, 20 seed — `batch_20260724_024258` + `batch_20260822_125454`, gerçek-dünya kalibrasyonu sonrası)
+## 2. Güncel sonuçlar (22 senaryo, 2026-10-12 taraması)
 
-> Bu tablo 2026-07-24'te, motorun gerçek kavşak kayıtlarıyla kalibre
-> edilmesinden (bkz. `docs/scenario_capacity_calibration.md`) sonra
-> yeniden üretildi. Önceki (`batch_20260718_125627`, kalibrasyon-öncesi
-> motor fiziğiyle üretilmiş) sayılar artık geçersiz ve karşılaştırılamaz
-> — mutlak `avg_wait` değerleri genel olarak daha yüksek çünkü gerçek
-> kapasite eski (doğrulanmamış) motor varsayımının ~%43'ü (~0.478 vs
-> ~1.116 veh/s). Örüntü (adaptive'in fixed'e üstünlüğü) değişmedi.
+> **Bu bölüm 2026-10-12'de baştan yazıldı.** Önceki tablo (`batch_20260724_024258`)
+> üç nedenle geçersiz: (1) üretildiği kod sürümü kayıtlı değil ve bugünkü kodla
+> yeniden üretilemiyor, (2) 120 saniyelik koşular kavşak boşken başlayan geçiş
+> dönemini ölçüyordu ve geçemeyen araçları saymıyordu, (3) doğuş noktası hatası
+> (bkz. `docs/engine_overview.md`) uzun koşularda talebi seyreltiyordu. Eski
+> tablodaki "22 senaryonun 22'sinde adaptif önde" sonucu artık geçerli değildir.
 
-`overall_avg_wait`, fixed'e karşı en iyi adaptive kontrolcü:
+**Yöntem** (`tools/baseline_sweep.py`, rapor `tools/baseline_sweep_report.py`):
 
-| Senaryo | Fixed | En iyi adaptive | İyileşme | p99 iyileşme |
+- Koşu 600 sn, ilk 120 sn ısınma. `mixed_master_scenario` kendi 1800 sn süresiyle.
+- Senaryo başına 10 seed (`mixed_master_scenario` 3), toplam 1491 koşu.
+- Sabit süre tek bir değerle değil 5, 6, 8, 10 ve 12 sn yeşil süreleriyle tarandı. Adaptif kontrolcü her senaryonun **en iyi** sabit süresiyle karşılaştırılır.
+- Bekleme, ölçüme giren tüm araçları kapsar: geçenler ve koşu sonunda hâlâ kuyrukta olanlar (bkz. `docs/metrics_definitions.md`).
+- Adaptif: `adaptive_optimal_ground_truth_v3` ve `adaptive_rolling_horizon_ground_truth` (v1).
+
+**Özet**
+
+- Senaryo sayısı: 22
+- Varsayılan sabit süreye (10s) göre kazanç: ortalama %50, en düşük %5
+- Her senaryonun en iyi sabit süresine göre kazanç: ortanca %43, ortalama %37, en düşük %-8
+- Adaptifin ortalamada önde olduğu senaryo: 20/22
+- Adaptifin koşuların en az %80'inde önde olduğu senaryo: 16/22
+- Tek bir sabit süre seçilseydi (senaryo başına varsayılana oranın ortalaması, küçük olan iyi): 5s=0.923, 6s=0.827, 8s=1.046, 10s=1.000, 12s=1.017
+
+| Senaryo | sabit 5s | sabit 6s | sabit 8s | sabit 10s | sabit 12s | en iyi sabit | en iyi adaptif | kazanç (sabit 10s) | kazanç (en iyi sabit) | adaptif önde (koşu) | geçemeyen: sabit / adaptif |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| balanced_traffic | 28.8 | 23.9 | 31.9 | 33.1 | 30.3 | 6s | 21.7 (v3) | %34 | %9 | 7/10 | %7 / %7 |
+| right_heavy_traffic | 60.8 | 59.3 | 72.0 | 65.2 | 66.7 | 6s | 27.9 (v3) | %57 | %53 | 10/10 | %23 / %9 |
+| vertical_heavy_traffic | 46.7 | 42.5 | 57.5 | 49.7 | 53.5 | 6s | 20.4 (v3) | %59 | %52 | 10/10 | %17 / %7 |
+| peak_traffic | 52.5 | 48.7 | 67.8 | 57.8 | 61.1 | 6s | 52.5 (v3) | %9 | %-8 | 1/10 | %18 / %19 |
+| low_traffic | 22.0 | 17.4 | 20.4 | 24.3 | 21.2 | 6s | 9.4 (v3) | %61 | %46 | 10/10 | %5 / %4 |
+| turn_heavy_traffic | 29.4 | 24.5 | 32.6 | 33.8 | 30.4 | 6s | 22.4 (v3) | %34 | %8 | 8/10 | %8 / %7 |
+| single_direction_traffic | 162.5 | 166.5 | 179.9 | 167.7 | 169.3 | 5s | 0.0 (v3) | %100 | %100 | 10/10 | %82 / %2 |
+| extreme_directional_traffic | 121.0 | 126.9 | 139.8 | 128.7 | 131.8 | 5s | 7.0 (v3) | %95 | %94 | 10/10 | %57 / %3 |
+| sparse_traffic | 20.1 | 16.3 | 19.1 | 21.2 | 22.0 | 6s | 3.9 (v3) | %82 | %76 | 10/10 | %5 / %0 |
+| idle_intersection | 16.0 | 14.4 | 16.2 | 14.6 | 21.9 | 6s | 4.3 (v3) | %71 | %70 | 10/10 | %3 / %0 |
+| direction_shift_traffic | 29.9 | 24.6 | 32.6 | 33.7 | 31.0 | 6s | 21.9 (v3) | %35 | %11 | 8/10 | %7 / %7 |
+| demand_shift_traffic | 29.9 | 24.7 | 32.7 | 34.1 | 31.4 | 6s | 22.5 (v3) | %34 | %9 | 8/10 | %7 / %6 |
+| burst_traffic | 34.8 | 28.7 | 39.1 | 37.8 | 36.7 | 6s | 27.6 (v3) | %27 | %4 | 5/10 | %8 / %9 |
+| alternating_heavy_traffic | 34.6 | 29.0 | 39.6 | 37.5 | 35.8 | 6s | 28.8 (v3) | %23 | %1 | 5/10 | %9 / %9 |
+| asymmetric_peak_traffic | 92.3 | 94.9 | 111.1 | 98.7 | 102.4 | 5s | 53.7 (RH-v1) | %46 | %42 | 10/10 | %40 / %23 |
+| turning_conflict_traffic | 59.6 | 57.7 | 77.6 | 64.5 | 70.0 | 6s | 31.5 (RH-v1) | %51 | %45 | 10/10 | %22 / %10 |
+| emergency_balanced_traffic | 29.6 | 23.5 | 30.1 | 32.2 | 29.9 | 6s | 22.6 (v3) | %30 | %4 | 6/10 | %7 / %7 |
+| emergency_right_heavy_traffic | 55.1 | 56.0 | 66.7 | 59.6 | 60.9 | 5s | 24.2 (RH-v1) | %59 | %56 | 10/10 | %23 / %9 |
+| emergency_peak_traffic | 52.9 | 51.0 | 66.9 | 58.2 | 59.4 | 6s | 55.1 (v3) | %5 | %-8 | 4/10 | %19 / %20 |
+| emergency_sparse_traffic | 18.0 | 16.1 | 18.6 | 21.1 | 22.2 | 6s | 3.9 (v3) | %81 | %76 | 10/10 | %5 / %1 |
+| emergency_low_frequency_mixed_traffic | 25.2 | 19.8 | 25.3 | 28.5 | 26.4 | 6s | 14.8 (v3) | %48 | %25 | 8/10 | %6 / %5 |
+| mixed_master_scenario | 56.3 | 49.3 | 77.9 | 59.0 | 66.1 | 6s | 27.4 (v3) | %54 | %44 | 3/3 | %2 / %1 |
+
+**Okuma notları**
+
+- **Kazanç trafiğin dengesizliğinden geliyor.** Yönlere eşit dağılmayan ya da seyrek trafikte (tek yönlü, aşırı yönlü, sağ/dikey ağırlıklı, seyrek, boş kavşak) kazanç %42-100 ve her koşuda tekrarlanıyor. Sabit süre boş ya da az yüklü yöne yeşil yakmaya devam ediyor.
+- **Dengeli trafikte fark küçük.** Dengeli, dönüş ağırlıklı, yön/talep kaymalı, patlamalı ve dönüşümlü senaryolarda iyi ayarlanmış 6 sn'lik sabit süreye göre kazanç %1-11, koşuların bir kısmında sabit süre önde. Nedeni `docs/strategy_structure.md`'de: v3 yeşil süresini pratikte değiştirmiyor.
+- **Doygunlukta adaptif geride.** `peak_traffic` ve `emergency_peak_traffic`'te talep kapasitenin üstünde, araçların yaklaşık beşte biri koşu sonunda hâlâ kuyrukta. Adaptif burada %8 geride. Kapasite yetmediğinde sıralama bir şey kazandırmıyor.
+- **Varsayılan sabit süre (10 sn) kötü bir referans.** 22 senaryonun 18'inde en iyi sabit süre 6 sn. "Sabit 10 sn'ye göre kazanç" sütunu bu yüzden adaptifi olduğundan iyi gösterir.
+- `single_direction_traffic`'teki %100 bir kenar durumudur: tek aktif yön sürekli yeşil alır.
+
+### Acil durum araçları
+
+Acil durum araçlarının ortalama beklemesi (sn, kavşağı geçenler):
+
+| Senaryo | sabit 6s | v3 | rolling horizon | yeşil uzatması (v3, 10 koşu toplamı) |
 |---|---:|---:|---:|---:|
-| balanced_traffic | 24.17 | 18.34 (v3) | %24.1 | %24.8 |
-| right_heavy_traffic | 28.28 | 15.66 (v3) | %44.6 | %43.6 |
-| vertical_heavy_traffic | 25.11 | 15.48 (RH-v2) | %38.4 | %23.3 |
-| peak_traffic | 27.33 | 24.48 (v3) | %10.4 | %14.8 |
-| low_traffic | 21.76 | 10.79 (RH-v2) | %50.4 | %49.8 |
-| turn_heavy_traffic | 24.39 | 18.53 (v3) | %24.0 | %25.1 |
-| single_direction_traffic | 46.96 | 0.00 (v3) | %100 | %100 |
-| extreme_directional_traffic | 40.03 | 4.56 (v3) | %88.6 | %79.9 |
-| sparse_traffic | 20.09 | 3.60 (RH-v1) | %82.1 | %80.6 |
-| idle_intersection | 18.86 | 6.18 (v3) | %67.2 | %70.1 |
-| direction_shift_traffic | 29.34 | 12.88 (v3) | %56.1 | %50.0 |
-| demand_shift_traffic | 21.07 | 16.93 (v3) | %19.6 | %11.3 |
-| burst_traffic | 27.55 | 19.17 (v3) | %30.4 | %33.6 |
-| alternating_heavy_traffic | 26.48 | 16.09 (v3) | %39.2 | %44.9 |
-| asymmetric_peak_traffic | 29.92 | 22.49 (RH-v2) | %24.8 | %15.2 |
-| turning_conflict_traffic | 27.76 | 18.46 (RH-v2) | %33.5 | %25.6 |
-| emergency_balanced_traffic | 18.79 | 6.77 (RH-v2) | %64.0 | %71.4 |
-| emergency_right_heavy_traffic | 27.46 | 15.69 (v3) | %42.8 | %43.4 |
-| emergency_peak_traffic | 28.85 | 24.12 (RH-v1) | %16.4 | -%1.1 |
-| emergency_sparse_traffic | 22.17 | 5.21 (v3) | %76.5 | %74.8 |
-| emergency_low_frequency_mixed_traffic | 27.00 | 18.46 (RH-v1) | %31.6 | %16.7 |
-| mixed_master_scenario | 120.03 | 41.04 (RH-v1) | %65.8 | %58.6 |
+| emergency_balanced_traffic | 27.7 | 3.4 | 2.6 | 39 |
+| emergency_right_heavy_traffic | 44.5 | 3.0 | 2.7 | 27 |
+| emergency_peak_traffic | 43.9 | 9.6 | 21.9 | 155 |
+| emergency_sparse_traffic | 12.7 | 0.6 | 0.6 | 4 |
+| emergency_low_frequency_mixed_traffic | 14.7 | 1.6 | 2.0 | 7 |
 
-**Okuma notu:** `emergency_peak_traffic` hâlâ en mütevazı kazancın
-görüldüğü yer (kapasiteye yakın talep + sık emergency kesintisi,
-adaptive'in manevra alanını daraltıyor) — p99'da küçük bir gerileme
-(-%1.1) var ama ortalamada hâlâ net kazanç. **22 senaryonun 22'sinde de
-adaptive fixed'ten iyi**; hiçbir senaryoda adaptive kaybetmiyor.
-`single_direction_traffic`'in %100 iyileşmesi hâlâ bir kenar durumu (bkz.
-eski dokümandaki gerekçe). `mixed_master_scenario` kalibrasyon-öncesinde
-adaptive'in fixed'ten *kötü* çıktığı tek senaryoydu (bkz.
-`scenario_capacity_calibration.md`'nin 2026-07-16 bölümü) — gerçek-dünya
-kalibrasyonu sonrası bu artık **tersine döndü** (%65.8 iyileşme), kesin
-nedeni izole edilmedi ama artık gözlenen bir zayıflık değil.
-
-**Emergency-araç önceliklendirme (v3, 3 örnek senaryo):**
-
-| Senaryo | Fixed emg_avg_wait | v3 emg_avg_wait | Fixed emg_crossed/spawned | v3 emg_crossed/spawned |
-|---|---:|---:|---:|---:|
-| emergency_right_heavy_traffic | 9.23s | 2.26s | 0.30/0.50 | 0.50/0.60 |
-| emergency_peak_traffic | 13.61s | 6.36s | 0.90/1.25 | 1.25/1.40 |
-| emergency_sparse_traffic | 2.79s | 0.55s | 0.15/0.15 | 0.15/0.15 |
+Adaptif kontrolcülerin en net üstünlüğü burada: acil durum aracı sabit sürede 13-45 sn beklerken öncelikli kontrolde 10 sn'nin altında bekliyor. Tek istisna doygun `emergency_peak_traffic`'te rolling horizon (22 sn). Bu tablo, yeşil uzatması düzeltildikten sonraki ilk ölçümdür.
 
 ## 3. Bu sistemin gerçek trafikte iyi karşıladığı şeyler
 

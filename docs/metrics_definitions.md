@@ -15,7 +15,19 @@ Bir aracın `waitTime`'ı, sinyal kırmızıyken duruyorken tick başına **ger�
 | `overall_max_wait` | Tek bir aracın gördüğü en yüksek bekleme — yüksekse starvation/adalet sorununa işaret eder |
 | `overall_wait_p90` / `p95` / `p99` | Kuyruk (tail latency) davranışı — "en kötü %10/%5/%1'lik dilim ne kadar bekliyor" |
 
-**Önemli kapsam notu:** Bu metrikler yalnızca **geçen** (crossed) araçları kapsar — hâlâ kuyrukta bekleyen araçlar (simülasyon bitene kadar geçemeyenler) bu ortalamaya dahil edilmez. Aşırı doygun bir senaryoda (talep kapasiteyi aştığında) bu durum `overall_avg_wait`'i gerçekte olduğundan **daha iyi gösterebilir** — çünkü en çok mağdur olan araçlar (hiç geçemeyenler) hesaba katılmıyor.
+**Önemli kapsam notu:** Bu metrikler yalnızca **geçen** (crossed) araçları kapsar. Koşu bittiğinde hâlâ kuyrukta olan araçlar bu ortalamaya girmez. Talebin kapasiteyi aştığı senaryolarda bu, `overall_avg_wait`'i olduğundan iyi gösterir. Bu yüzden aşağıdaki tamamlayıcı metrikler birlikte okunmalıdır.
+
+### Isınma süresi, gecikme ve geçemeyen araçlar
+
+| Metrik / ayar | Tanım |
+|---|---|
+| `warmup_time` (ayar) | Bu süreden önce doğan araçlar hiçbir istatistiğe girmez, kuyruk örneklemesi de bu süreden sonra başlar. Varsayılan 0. Kavşak boşken başlayan koşunun ilk dakikaları kalıcı durumu temsil etmediği için kullanılır |
+| `overall_avg_delay` / `overall_delay_p95` | Kontrol gecikmesi: aracın dur çizgisini geçtiği an eksi doğduğu an eksi aynı mesafeyi serbest sürüşle alacağı süre. Kırmızıda durmanın yanında kuyrukta yavaş ilerlemeyi de içerir |
+| `vehicles_measured` | Isınmadan sonra doğan, ölçüme giren araç sayısı |
+| `vehicles_uncrossed` | Bunlardan koşu bittiğinde hâlâ kavşağı geçememiş olanlar |
+| `uncrossed_avg_wait` | Geçemeyen araçların koşu sonuna kadar biriken ortalama beklemesi |
+
+`tools/baseline_sweep_report.py` iki grubu birleştirerek **tüm ölçülen araçların** ortalama beklemesini raporlar: `(overall_avg_wait × geçen + uncrossed_avg_wait × geçemeyen) / vehicles_measured`. Geçemeyen araçların beklemesi koşu sonunda kesildiği için bu değer doygun senaryolarda hâlâ alt sınırdır.
 
 ## 2. Kuyruk (queue) metrikleri
 
@@ -23,6 +35,8 @@ Bir aracın `waitTime`'ı, sinyal kırmızıyken duruyorken tick başına **ger�
 |---|---|
 | `queue_length_average` | Simülasyon boyunca her tick'te örneklenen kuyruk uzunluğunun ortalaması |
 | `queue_length_peak` | Gözlenen en yüksek kuyruk uzunluğu |
+
+**Ne sayılıyor:** Kuyruk uzunluğu, o yönde henüz kavşağı geçmemiş **tüm** araçların sayısıdır. Duran araçların yanında kavşağa yaklaşmakta olanları da içerir, yani dar anlamda "bekleyen kuyruk" değil "yaklaşımdaki araç sayısı"dır.
 
 **Bilinen metodolojik not:** `update_queue_metrics()` her tick'te bir örnek alır (ağırlıksız). `playback_speed` arttıkça bir tick daha fazla simüle-saniyeyi temsil eder, yani örnekleme çözünürlüğü kabalaşır — ani/kısa süreli sıçramalar yüksek `playback_speed`'de kaçırılabilir. Aynı batch içindeki tüm koşular aynı `playback_speed` kullandığı sürece (bu projedeki tüm batch koşuları 8x kullanıyor) karşılaştırmalar birbirine göre adildir; farklı `playback_speed` değerlerinde alınmış mutlak sayılar doğrudan karşılaştırılmamalıdır.
 

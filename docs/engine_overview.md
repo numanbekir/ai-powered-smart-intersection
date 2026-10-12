@@ -17,7 +17,9 @@ Zaman, gerçek duvar-saatiyle değil, **tek bir otoriter sayaçla** (`simulation
 
 `(senaryo, kontrolcü modu, kontrolcü versiyonu, state provider, seed)` beşlisi sabitken simülasyon deterministik olmalıdır (`random.seed(seed)`). `tools/verify_determinism.py` bunu doğrular: aynı seed'le, yapay CPU yükü olmadan art arda iki koşu **birebir aynı** sonucu vermeli.
 
-**Bilinen, kabul edilmiş tek istisna:** spawner thread'i ile ana döngünün per-tick durumu okuması arasında hâlâ ince bir senkronizasyon farkı var; bu, bir doğuşun tick sınırının hangi tarafına düştüğüne bağlı olarak kuyruk sayısını ±1 kaydırabilir (nadiren bir kararın green_time'ını da). Yapay CPU yükü altında bu fark görülür (`verify_determinism.py`'nin 2. testi); yüksüz koşularda görülmez. Bu, tek tek strateji/kontrolcü değişikliklerinin sebep olduğu bir şey değil, motorun kendi bilinen sınırı.
+**Tick bariyeri:** Ana döngü, controller ve spawner thread'leri o tick'teki işini bitirip yeniden beklemeye geçmeden bir sonraki tick'e ilerlemez (`wait_for_workers()`, `scaled_sleep()` içindeki uyanma hedefi kaydı). Önceden bir doğuş, CPU yükü altında tick sınırının öbür tarafına düşüp kuyruk sayısını ±1 kaydırabiliyordu ve bu "kabul edilmiş istisna" olarak belgelenmişti. Bariyerle bu fark kalktı: `verify_determinism.py`'nin yük altındaki testi de birebir aynı sonucu verir.
+
+**Doğuş noktası:** Araç, şeridin sabit doğuş noktasında ya da şeridin son aracı henüz oradan ayrılmadıysa onun arkasında doğar (`Vehicle.place_at_spawn()`, ilk `move()` çağrısında ana döngüde). Önceki sürümde doğuş noktası her doğuşta geriye itiliyor ve hiç geri gelmiyordu. Uzun koşularda araçlar kavşaktan binlerce piksel uzakta doğuyor, talep fiilen seyreliyordu. 120 saniyelik koşularda etkisi küçüktü, 20 dakikalık koşuda doğuş mesafesi 322 pikselden 4530 piksele çıkıyordu.
 
 ## Hareket modeli ve bu oturumda düzeltilen dönüş-kayması hatası
 
