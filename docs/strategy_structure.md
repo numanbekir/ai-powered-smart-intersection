@@ -51,6 +51,23 @@ v2 üzerinde yapılan bir inceleme, batch verisinde `choose_next_phase`'in norma
 
 Sonuç: `multi_direction_max_green=6` değişmedi (v1 ile aynı). Bu, "kademeli iyileştirme, ölç, sonra devam et" yaklaşımının somut bir çıktısı — bir varsayım test edildi ve yanlış çıktı, kod gereksiz yere karmaşıklaştırılmadı.
 
-## `yolo` provider için strateji: henüz yazılmadı
+## `yolo` provider için strateji: `camera_queue`
 
-`state_providers/yolo_provider.py` şu an bir placeholder — gerçek algılama yok. Bu placeholder'ı tüketecek strateji de **henüz yazılmadı**; gerçek YOLO/CV entegrasyonu geldiğinde sıfırdan tasarlanacak, bu projenin önceki adaptive-controller kodlarından hiçbiri yeniden kullanılmayacak. `docs/ground_truth_final_state_and_gaps.md`, o strateji yazıldığında karşılaştırılacak hedef metrikleri (ground truth'un ulaştığı sonuçlar) şimdiden belgeliyor.
+`controllers/strategies/camera_queue_strategy.py` (`adaptive_camera_queue_v1`), v3'ün karar kuralını yalnızca kameradan gelen gözlemle uygular. Amaç aynı kuralı iki farklı girdiyle çalıştırıp aradaki farkı algılamanın maliyeti olarak ölçmektir.
+
+**Girdi.** `YoloStateProvider.get_observation()` her yön için şunu verir: `queue_count` (duran araç), `visible_count`, `is_saturated` (duran bir araç kare kenarına 70 pikselden yakınsa, kuyruk büyük olasılıkla kare dışında sürüyor) ve `emergency` (tespit edilen acil durum aracının türü, dur çizgisine uzaklığı, önündeki araç sayısı). Strateji bunun dışında yalnızca kontrolcünün saatini kullanır.
+
+**v3'ten farkları.**
+
+- Bekleme süresi araçlardan okunmaz. Her yön için "son yeşilinden bu yana geçen süre" tutulur, açlık koruması bununla çalışır.
+- Boşalma hızı ölçülmez, sabit bir değer varsayılır (`assumed_discharge_rate`, 0,5 araç/sn).
+- Acil durum aracının varış süresi kutunun dur çizgisine uzaklığından ve önündeki araç sayısından tahmin edilir (`emergency_speed_px_per_s`, `seconds_per_vehicle_ahead`).
+- Strateji durumu sınıf örneğinde tutulur, motorun içine yazılmaz.
+
+**Bilinen sınırlar.**
+
+- Kuyruk karede görünenle sınırlıdır. Uzun kuyrukta sayı tavana vurur. `saturated_green_bonus` bu durumda yeşili uzatmak için eklendi, varsayılanı 0 ve ölçülen sonuçlarda kapalı.
+- Kare dışında bekleyen acil durum aracı görülmez. Öncelik, araç kareye girdiğinde başlar.
+- Bir araç ancak iki ardışık gözlemde yer değiştirmediğinde kuyruk sayılır. Bu, kuyruğa yeni katılan aracı bir saniye geç saydırır.
+
+Sonuçlar: `reports/camera/summary.md`.

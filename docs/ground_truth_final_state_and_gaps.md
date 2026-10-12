@@ -8,7 +8,7 @@ neyi doğru yakaladığını ve neyi kapsamadığını — yani YOLO fazının
 kapatması/karşılaşacağı somut boşlukları — tek bir yerde toplamak.
 
 Bu projenin daha önceki bir kalibrasyon-öncesi tavan dokümanının yerini alır;
-YOLO fazına başlarken ilk okunması gereken doküman burasıdır.
+YOLO fazının bu tavana göre sonucu Bölüm 5'te.
 
 > **2026-10-12 güncellemesi:** Bölüm 2 yeni ölçüm yöntemiyle baştan
 > yazıldı ve aşağıdaki iki eski güncelleme notunun anlattığı tablonun
@@ -245,16 +245,19 @@ değiştirecek**.
    adil, ama mutlak sayılar `playback_speed`'e duyarlı (bkz.
    `docs/metrics_definitions.md`).
 
-## 5. YOLO fazına geçiş için pratik sonuç
+## 5. YOLO fazının sonucu
 
-Bölüm 2'deki tablo, YOLO'nun ölçüleceği **referans tavanı** tanımlıyor:
-gerçek algılama, tam-bilgi ground truth'un ürettiği bu iyileşme
-oranlarına (senaryoya göre %10-100, çoğunlukla %25-65 — bkz. 2026-07-24
-gerçek-dünya kalibrasyonu sonrası güncellenmiş tablo) ne kadar
-yaklaşabiliyor sorusu, projenin bir sonraki fazının temel araştırma
-sorusu. Bölüm 4'teki boşluk listesi, YOLO stratejisi tasarlanırken hangi
-ek belirsizliklerin (gürültülü/gecikmeli/kısmi gözlem) hesaba katılması
-gerektiğinin somut kontrol listesi olarak kullanılmalı — özellikle madde
-1 (gürültüsüz sensör varsayımının kalkması) ve madde 5 (emergency
-tespitinin artık mükemmel olmaması), `state_providers/yolo_provider.py`
-ve ona karşılık gelecek stratejinin tasarımını doğrudan etkileyecek.
+Bu doküman YOLO fazından önce yazıldı. Faz tamamlandı: kameralı kontrolcü
+(`adaptive_camera_queue_v1`) Bölüm 2'deki tavana ortanca 1,2 sn ek beklemeyle
+yaklaşıyor, en yüksek fark 5,6 sn. Tam tablo `reports/camera/summary.md`'de.
+
+Bölüm 4'teki boşluklardan hangileri ölçüldü:
+
+- **Madde 1 (kısmi görüş açısı):** ölçüldü. Kontrolcü yalnızca 900x900 kareyi
+  görüyor, kare dışındaki kuyruk sayılmıyor.
+- **Madde 5 (acil durum tespiti):** kısmen ölçüldü. Araç sınıfı görüntüden
+  tespit ediliyor, kare dışında bekleyen araç görülmüyor. Bekleme v3'te
+  0,6-9,6 sn, kamerada 1,3-35,0 sn.
+- **Tespit hataları, ışık, hava, örtüşme:** ölçülmedi. Görüntüler simülasyonun
+  kendi çizimi olduğu için model neredeyse hatasız (mAP50-95 0,98). Gerçek
+  kamera görüntüsüyle bu maliyet ayrıca ölçülmeli.
