@@ -1,0 +1,15 @@
+{
+  "precision": 0.9975,
+  "recall": 0.9993,
+  "mAP50": 0.995,
+  "mAP50-95": 0.981,
+  "per_class_mAP50-95": {
+    "car": 0.9897,
+    "bus": 0.9806,
+    "truck": 0.9827,
+    "bike": 0.9697,
+    "ambulance": 0.9684,
+    "police": 0.9909,
+    "firetruck": 0.985
+  }
+}

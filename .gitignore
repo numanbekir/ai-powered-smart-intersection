@@ -5,3 +5,6 @@ __pycache__/
 .vscode/
 data/batches/
 data/archive/
+data/detection_dataset/
+runs/
+yolo11n.pt

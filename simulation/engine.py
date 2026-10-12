@@ -286,6 +286,9 @@ class SimulationEngine:
 
         pygame.init()
         self.simulation = pygame.sprite.Group()
+        # Called once per tick from the main loop, after vehicles have moved.
+        # Read-only observers (dataset capture, evaluation) register here.
+        self.tick_listeners = []
 
         self.state_provider = self.build_state_provider()
         self.controller = self.build_controller()
@@ -2133,6 +2136,9 @@ class SimulationEngine:
 
                 self.update_queue_metrics()
 
+                for listener in self.tick_listeners:
+                    listener(self)
+
             else:
                 self.draw_vehicles_clipped(screen, move_vehicles=False)
                 self.draw_detection_area_overlays(screen)
@@ -2248,6 +2254,9 @@ class SimulationEngine:
                 self.advance_simulation_time()
 
                 self.update_queue_metrics()
+
+                for listener in self.tick_listeners:
+                    listener(self)
 
                 if self.simulation_elapsed >= self.simulation_time:
                     self.stop_simulation()
