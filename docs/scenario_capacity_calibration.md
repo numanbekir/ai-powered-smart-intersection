@@ -13,7 +13,7 @@
 
 ## Bulgu: senaryolar hiç ölçülmeden ayarlanmıştı
 
-Kullanıcı, `mixed_master_scenario`'da adaptive stratejilerin fixed'ten kötü çıkmasının araç üretim mekanizmasındaki bir dengesizlikten kaynaklanıp kaynaklanmadığını sordu. İnceleme şunu ortaya çıkardı: **20 senaryonun `spawn_interval` değerleri hiçbir kapasite ölçümüne dayanmadan ayarlanmıştı.** Kullanıcı bunu doğruladı: "kasıtlı bir durum değil."
+`mixed_master_scenario`'da adaptive stratejilerin fixed'ten kötü çıktığı gözlemlendi ve bunun araç üretim mekanizmasındaki bir dengesizlikten kaynaklanıp kaynaklanmadığı incelendi. İnceleme şunu ortaya çıkardı: **20 senaryonun `spawn_interval` değerleri hiçbir kapasite ölçümüne dayanmadan ayarlanmıştı.** Bu kasıtlı bir tercih değildi.
 
 `generateVehicles()` tek bir spawner thread'i, her `spawn_interval` simüle saniyede 1 araç üretiyor (yön, `direction_density` ağırlıklarıyla seçiliyor — density mutlak üretim hızını değil, yalnızca yönler arası oranı belirliyor). Bu mekanizmanın kendisi doğru; sorun sadece `spawn_interval` değerlerinin hangi trafik yoğunluğunu temsil ettiğinin hiç doğrulanmamış olmasıydı.
 
@@ -86,7 +86,7 @@ Yani sorun yalnızca 3 "peak" isimli senaryo değildi — **`balanced_traffic`, 
 ## Arşivleme (eski kalıntılar temizlendi)
 
 Bu kalibrasyon öncesi üretilen TÜM batch/rapor verisi, artık geçersiz talep seviyelerine dayandığından, gelecekteki `tools/report_generator.py` çalıştırmalarının (varsayılan, `batch_run_id=None`) varolan yeni verilerle sessizce karışmaması için taşındı:
-- `data/batches/*.jsonl` (ve kullanıcının kendi manuel GUI koşularını içeren `manual_runs.jsonl` dahil) → `data/archive/pre_capacity_recalibration_20260716/batches/`
+- `data/batches/*.jsonl` (manuel GUI koşularını içeren `manual_runs.jsonl` dahil) → `data/archive/pre_capacity_recalibration_20260716/batches/`
 - `data/results_index.json` → içeriği aynı klasöre kopyalandı, canlı dosya `[]` olarak sıfırlandı
 - `reports/batch_20260714_180508_report_*`, `reports/batch_report_20260715_054505` → `reports/archive_pre_capacity_recalibration_20260716/`
 - `data/scenarios.json`'ın kalibrasyon öncesi hâli → `data/archive/scenarios_pre_capacity_recalibration_20260716.json`
@@ -117,7 +117,7 @@ Bu, önceki (artık projeden çıkarılmış) dokümanlardaki "doygunlukta sık 
 
 ## Sonuç
 
-Kullanıcının sorusu doğru bir teşhisti: senaryolar gerçekten ölçülmeden ayarlanmıştı, ve bu bazı sonuçları (özellikle `emergency_peak_traffic` ve `mixed_master_scenario`) bozuyordu. Kalibrasyon sonrası tablo artık çok daha tutarlı ve yorumlanabilir: adaptive, gerçekçi talep altında hemen her standart senaryoda güçlü bir kazanım veriyor; `mixed_master_scenario`'daki tek zayıflık artık net bir mekanizmaya (öğrenilmiş-parametre rejim-değişimi gecikmesi) bağlanabiliyor — bu da gelecekte hedefli bir çözüm (ör. rejim değişimini algılayıp öğrenilmiş parametreleri hızla sıfırlayan/adapte eden bir mekanizma) için somut bir yön veriyor.
+Şüphe doğrulandı: senaryolar ölçülmeden ayarlanmıştı ve bu bazı sonuçları (özellikle `emergency_peak_traffic` ve `mixed_master_scenario`) bozuyordu. Kalibrasyon sonrası tablo artık çok daha tutarlı ve yorumlanabilir: adaptive, gerçekçi talep altında hemen her standart senaryoda güçlü bir kazanım veriyor; `mixed_master_scenario`'daki tek zayıflık artık net bir mekanizmaya (öğrenilmiş-parametre rejim-değişimi gecikmesi) bağlanabiliyor — bu da gelecekte hedefli bir çözüm (ör. rejim değişimini algılayıp öğrenilmiş parametreleri hızla sıfırlayan/adapte eden bir mekanizma) için somut bir yön veriyor.
 
 ## Ek: `demand_shift_traffic` (rejim-değişimi izolasyon senaryosu)
 
@@ -152,7 +152,7 @@ Bu üç olası neden ayrı ayrı test edilmeden (ör. yön+büyüklük birlikte 
 
 ### Bulgu: motorun kendi ölçtüğü kapasite (~1.116 araç/sn), gerçek kavşaklardan ~2.3x hızlıydı
 
-Kullanıcı 3 farklı kavşakta 5-10 dakikalık kayıt aldı (tek yön/kamera, 4 yön aynı anda görünmüyor). Her yeşil faz için elle işaretlenen `(yeşil_başlangıç, ilk_araç_geçiş, yeşil_bitiş, boşalan_araç_sayısı, şerit_sayısı)` verisi `data/real_world_calibration.csv`'ye girildi (22 faz, 3 kavşak, `tools/real_world_calibration_analysis.py` ile analiz edildi):
+3 farklı kavşakta 5-10 dakikalık kayıt alındı (tek yön/kamera, 4 yön aynı anda görünmüyor). Her yeşil faz için elle işaretlenen `(yeşil_başlangıç, ilk_araç_geçiş, yeşil_bitiş, boşalan_araç_sayısı, şerit_sayısı)` verisi `data/real_world_calibration.csv`'ye girildi (22 faz, 3 kavşak, `tools/real_world_calibration_analysis.py` ile analiz edildi):
 
 - **Gerçek discharge_rate** (yön başına, 2 şeritli yollar, n=18 faz): ortalama **0.474 veh/s** (medyan 0.487, min 0.111, maks 0.625).
 - **Gerçek start-up lost time** (yeşile geçiş ile ilk aracın hareketi arası gecikme, n=22): ortalama **~2.95s** (medyan 3.00s, aralık 2-5s).
@@ -213,13 +213,13 @@ Değişiklik sonrası önce 1-seed'lik pilot (22 senaryo × 6 kontrolcü = 132 k
 
 ### Eski batch verisinin arşivlenmesi
 
-Bu değişiklikten önce üretilmiş TÜM veri (motor fiziği ve `spawn_interval`'lar farklıydı) artık geçersiz. `data/batches/manual_runs.jsonl` (68 kayıt, 2026-07-19 ile 2026-07-23 arası manuel GUI test oturumlarından) ve `data/results_index.json`'daki karşılık gelen 68 satır, projenin kurulu arşivleme desenine göre `../traffic_sim_data_archive/pre_real_world_calibration_20260724/`'e taşındı (bkz. o klasördeki `NOTE.md`). Hiçbir şey silinmedi, sadece canlı/varsayılan yoldan çıkarıldı. Canlı `data/results_index.json` artık yalnızca `batch_20260724_024258`'in 2538 kaydını içeriyor. *(2026-08-22 güncellemesi: bu 2538 kaydın `sparse_traffic`'e ait 120'si hatalı senaryo kaydıyla üretildiği için `../traffic_sim_data_archive/stale_sparse_traffic_20260822/`'ye taşındı ve yerini `batch_20260822_125454`'ün 120 kaydı aldı — bkz. aşağıdaki bölüm.)*
+Bu değişiklikten önce üretilmiş TÜM veri (motor fiziği ve `spawn_interval`'lar farklıydı) artık geçersiz. `data/batches/manual_runs.jsonl` (68 kayıt, 2026-07-19 ile 2026-07-23 arası manuel GUI testlerinden) ve `data/results_index.json`'daki karşılık gelen 68 satır, projenin kurulu arşivleme desenine göre `../traffic_sim_data_archive/pre_real_world_calibration_20260724/`'e taşındı (bkz. o klasördeki `NOTE.md`). Hiçbir şey silinmedi, sadece canlı/varsayılan yoldan çıkarıldı. Canlı `data/results_index.json` artık yalnızca `batch_20260724_024258`'in 2538 kaydını içeriyor. *(2026-08-22 güncellemesi: bu 2538 kaydın `sparse_traffic`'e ait 120'si hatalı senaryo kaydıyla üretildiği için `../traffic_sim_data_archive/stale_sparse_traffic_20260822/`'ye taşındı ve yerini `batch_20260822_125454`'ün 120 kaydı aldı — bkz. aşağıdaki bölüm.)*
 
 ## 2026-08-22: `sparse_traffic` düzeltmesi
 
 ### Sorun
 
-`data/scenarios.json`'daki `sparse_traffic` kaydı, 2026-07-16 ile 2026-07-24 arasında bir noktada (büyük olasılıkla bir senaryo-editörü GUI oturumunda) yanlışlıkla üzerine yazılmıştı. Arşivdeki 2026-07-16 kopyası (`../traffic_sim_data_archive/scenarios_pre_capacity_recalibration_20260716.json`) ile karşılaştırılınca iki alanın saptığı doğrulandı:
+`data/scenarios.json`'daki `sparse_traffic` kaydı, 2026-07-16 ile 2026-07-24 arasında bir noktada (büyük olasılıkla senaryo editöründe) yanlışlıkla üzerine yazılmıştı. Arşivdeki 2026-07-16 kopyası (`../traffic_sim_data_archive/scenarios_pre_capacity_recalibration_20260716.json`) ile karşılaştırılınca iki alanın saptığı doğrulandı:
 
 | Alan | Hatalı değer (2026-07-24 batch'inde kullanılan) | Amaçlanan değer (2026-08-22'de geri alındı) |
 |---|---:|---:|

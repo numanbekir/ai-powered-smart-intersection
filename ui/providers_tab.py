@@ -177,14 +177,11 @@ class ProvidersTab:
             return
 
         if not self.app.controller_registry.list_by_provider_type(provider_type):
-            # Bu provider type'a uyumlu hicbir strateji yoksa (su an sadece
-            # `yolo` -- bilincli placeholder, henuz yazilmis bir strateji yok)
-            # aktif secim olarak KULLANILAMAZ: eskiden bu engellenmiyordu,
-            # kullanici yolo'yu secip Start Simulation'a bastiginda
-            # current_controller_version eski (ground_truth) versiyonda
-            # kalirken current_state_provider yolo'ya gecmis oluyordu --
-            # mismatch, calistirma zamaninda hataya yol aciyordu. Onceki
-            # aktif secim geri yuklenip kullaniciya nedeni bildirilir.
+            # Bu provider type'a uyumlu hicbir strateji yoksa aktif secim
+            # olarak KULLANILAMAZ: aksi halde controller versiyonu eski
+            # provider'da kalirken state provider degismis olur ve
+            # calistirma zamaninda hata verir. Onceki aktif secim geri
+            # yuklenip kullaniciya nedeni bildirilir.
             previous_type = self.app.provider_type_var.get()
             self.type_list.selection_clear(0, tk.END)
             if previous_type in self.provider_types:

@@ -24,11 +24,11 @@ class SimulationEngine:
     # isigin hangi mantiksal yone ait oldugu konusunda karisiklik olmasin.
     #
     # NOT: bu degerler artik aracin hareket yonune gore degil, isigin
-    # EKRANDAKI FIZIKSEL KONUMUNA gore etiketleniyor (kullanici talebi).
+    # EKRANDAKI FIZIKSEL KONUMUNA gore etiketleniyor.
     # Ic anahtarlar ("right"/"down"/"left"/"up") aracin hareket yonunu
     # temsil etmeye devam ediyor -- degismedi, hicbir strateji/test/
     # scenario JSON'u bundan etkilenmiyor, SADECE bu sozlugun DEGERLERI
-    # (kullaniciya gosterilen metin) degisti. Geometrik dogrulama
+    # (ekranda gosterilen metin) degisti. Geometrik dogrulama
     # (__init__'teki stopLines/signalCoods koordinatlarindan): "right"
     # (saga/dogu yonune hareket eden araclar) isigi fiziksel olarak
     # ekranin SOL-ALT bolgesinde; "left" isigi SAG-UST'te; "down" (asagi
@@ -639,8 +639,8 @@ class SimulationEngine:
             # yon -- yanik gosterilmeye devam eder), stratejinin kendi ic
             # durumu (real_served) bu sirada zaten yeni turu saymaya
             # baslamis olsa bile. Pencere, o fazin GERCEKTE ne kadar surdugunden
-            # BAGIMSIZDIR -- kullanicinin istegi tam olarak bu: "fazin
-            # bitmesini beklemeden gorseli sifirla".
+            # BAGIMSIZDIR -- amac fazin bitmesini beklemeden gorseli
+            # sifirlamak.
             if self.cycle_completed_pending_reset:
                 if self.simulation_elapsed >= self.cycle_completed_flash_until:
                     self.cycle_completed_pending_reset = False
@@ -1476,7 +1476,7 @@ class SimulationEngine:
             # count_approaching()'in bir alt kumesi: henuz bekleme
             # durumuna gecmemis AMA zaten 900x900 gorunur alanin icinde
             # olan (yani birkac saniye icinde kuyruga eklenecek) araclar.
-            # Kullanicinin belirttigi durumu gorunur kilar: "yaklasan"
+            # Su durumu gorunur kilar: "yaklasan"
             # sayisi buyuk olsa da bunlarin cogu ekranin disinda,
             # kavsaga hala uzaktaysa, karar mekanizmasinin bunu gormemesi
             # (sadece 'bekleyen' sayisina bakmasi) kisa vadede sorun
@@ -1568,8 +1568,8 @@ class SimulationEngine:
         # bir de "yol bazinda canli ozet" tablosu vardi -- artik o veri
         # (kuyruk/bekleyen/ort-mak bekleme/gecen/ogrenilen discharge_rate)
         # DOGRUDAN her yonun kendi kutusunun icinde gosteriliyor; ayri
-        # tablo ve "oncelik siralamasi" karti kaldirildi (kullanici
-        # talebi -- tek bakista hem isik hem ozet).
+        # tablo ve "oncelik siralamasi" karti kaldirildi (tek
+        # bakista hem isik hem ozet).
         runtime_all = getattr(self, "optimal_direction_runtime", {})
 
         widget_gap = 10
@@ -1676,8 +1676,7 @@ class SimulationEngine:
 
             # Renk kodlama: sayilar tek bir noreme metin yerine ciddiyete
             # gore renkleniyor -- panele tek bakista "hangi yon dikkat
-            # istiyor" sorusuna cevap versin diye (kullanici talebi:
-            # metrikler "daha guzel ve anlasilir" gorunsun).
+            # istiyor" sorusuna cevap versin diye.
             if queue >= 10:
                 queue_color = PALETTE["red"]
             elif queue >= 5:

@@ -59,8 +59,8 @@ class RollingHorizonGroundTruthStrategy(OptimalGroundTruthStrategy):
     miyop bir sistemdir. Testlerde per-direction max_wait izlenerek açlık
     paterni olup olmadığı ayrıca kontrol edilmelidir.
 
-    Bulunan ve düzeltilen iki YAPISAL hata (2026-07-18, kullanıcının canlı
-    GUI'de "green_time neredeyse hep aynı, fixed gibi çalışıyor" gözlemiyle
+    Bulunan ve düzeltilen iki YAPISAL hata (2026-07-18, canlı
+    GUI'deki "green_time neredeyse hep aynı, fixed gibi çalışıyor" gözlemiyle
     tetiklendi -- headless doğrulamada `peak_traffic`'te kuyruk 10'a çıksa
     bile 14/14 kararın tam olarak `min_green` verdiği doğrulandı):
       1. `state_cost`'un adalet terimi ham `wait_clock` topluyordu (eşiksiz).
@@ -182,7 +182,7 @@ class RollingHorizonGroundTruthStrategy(OptimalGroundTruthStrategy):
         # `choose_normal_phase`'in reason metnindeki, buyume varsayimini
         # aciklayan parca -- V2, gercek mekanizmayi yansitmasi icin bunu
         # override eder (aksi halde metin hala "arrival_rate" diyip
-        # kullanicinin GUI'de takip ettigi karar aciklamasini yanlis
+        # GUI'de gosterilen karar aciklamasini yanlis
         # yonlendirirdi).
         return f"arrival_rate={arrival_rates[direction]:.2f} veh/s, "
 

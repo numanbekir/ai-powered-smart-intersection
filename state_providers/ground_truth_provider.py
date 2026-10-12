@@ -10,7 +10,7 @@ class GroundTruthStateProvider:
         # (serbestce ilerleyen) araclar DAHIL DEGIL. Onceden burada
         # `crossed == 0` olan HER arac sayiliyordu -- yani spawn olup henuz
         # kesisimi gecmemis her sey, kavsaga 900px uzakta olsa bile. Bu,
-        # kullanicinin GUI'de gozlemledigi bir soruna yol aciyordu: bir yon
+        # GUI'de gozlemlenen bir soruna yol aciyordu: bir yon
         # spawn_interval geregi cok sayida arac biriktirdiginde (ör. uzun
         # sureli bir tikanikliktan dolayi), bu araclarin BUYUK COGUNLUGU
         # gorunur 900x900 alanin bile disinda (spawn noktasindan geriye

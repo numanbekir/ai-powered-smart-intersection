@@ -35,8 +35,7 @@ YOLO fazının bu tavana göre sonucu Bölüm 5'te.
 ## 1. Son geliştirme turunun sonucu: `rolling_horizon_ground_truth_v2` ekseni kapandı
 
 Ground_truth hattı için "büyük fark yaratabilecek son bir geliştirme"
-arayışı, bu oturumda ve hemen öncesindeki (kayıt dışı kalmış) bir
-oturumda kapsamlı şekilde denendi. Özet:
+arayışı kapsamlı şekilde denendi. Özet:
 
 - `rolling_horizon_ground_truth_v2`'nin (kesin ETA projeksiyonu) v1'in
   (EMA tabanlı) üzerine iddia edilen ~%8-13'lük kazanç, gerçekte v2'nin
@@ -53,7 +52,7 @@ oturumda kapsamlı şekilde denendi. Özet:
   ailesinin önerilen/aktif üyesi; `adaptive_rolling_horizon_ground_truth_v2`
   zararsız ama gereksiz karmaşık olduğu için `experimental` statüsünde
   kalıyor.
-- Bu oturumda ayrıca `optimal_ground_truth` ailesinin emergency-öncelik
+- Aynı turda `optimal_ground_truth` ailesinin emergency-öncelik
   mekanizmasında gerçek bir davranış hatası bulunup düzeltildi: bir acil
   durum aracı, kendi yönündeki uzun bir kuyruğun arkasında (kavşağa hâlâ
   çok uzakken) "teknik olarak bloke" sayılıp erken öncelik alabiliyordu.
@@ -61,7 +60,7 @@ oturumda kapsamlı şekilde denendi. Özet:
   aracın verilebilecek en uzun yeşil+hold bütçesi içinde gerçekten
   kesişimi geçebileceği an veriliyor (bkz. `controllers/strategies/optimal_ground_truth_strategy.py`).
 - **Sonuç: bu eksende (rolling-horizon'un daha karmaşık bir varyantı) daha
-  fazla kazanç yok — dürüstçe kapatıldı.** Ground_truth hattının nihai,
+  fazla kazanç yok, eksen kapatıldı.** Ground_truth hattının nihai,
   önerilen kontrolcüleri: tek-adım karar için `adaptive_optimal_ground_truth_v3`,
   çok-adım/ileriye-bakan karar için `adaptive_rolling_horizon_ground_truth` (v1).
 
@@ -148,7 +147,7 @@ Adaptif kontrolcülerin en net üstünlüğü burada: acil durum aracı sabit s�
   ve cycle-fairness testleri bunu doğruluyor.
 - **ETA-tabanlı, gerçekçi emergency önceliklendirme:** sabit bir "acil
   durum yeşili" yerine, aracın ground-truth konum/hızından hesaplanan
-  kesin ETA'ya göre süre veriliyor; bu oturumda eklenen menzil kısıtı
+  kesin ETA'ya göre süre veriliyor; sonradan eklenen menzil kısıtı
   sayesinde öncelik yalnızca aracın gerçekten o an yaklaştığı/kesişimi
   geçebileceği an veriliyor (bkz. yukarı, bölüm 1) — tablo 2'deki
   emergency_avg_wait rakamları (fixed'in ~%75-80 altında) bunun somut
@@ -221,8 +220,8 @@ değiştirecek**.
    (blok bazlı `mixed_master_scenario` dahil) daha düzensiz/korelasyonlu
    olacak. Aynı kayıt yöntemi (yeşil faz başına elle işaretleme)
    genişletilip kırmızıda biriken araç sayısı/varış aralığı da
-   ölçülürse, talep tarafı da benzer şekilde kalibre edilebilir — bu
-   oturumda yapılmadı, doğal bir sonraki adım.
+   ölçülürse, talep tarafı da benzer şekilde kalibre edilebilir. Bu
+   yapılmadı, doğal bir sonraki adım.
 6. **Tek acil durum modeli, idealize edilmiş uyum.** Emergency araçlar
    (`ambulance`/`police`/`firetruck`) tespit edilir edilmez sistem
    tarafından mükemmel tanınıyor ve diğer sürücüler onlara her zaman tam

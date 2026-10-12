@@ -155,8 +155,8 @@ class OptimalGroundTruthStrategy(BaseAdaptiveStrategy):
         # sikismissa (GERCEKTE cok yakinsa bile), bu hesap ETA'yi ciddi
         # sekilde KUCUK gosteriyordu -- verilen yesil suresi aracin onundeki
         # kuyruk boşalmadan asla yetmiyor, bu da ayni aracin tur tur yeniden
-        # secilip hic ilerlememesine yol aciyordu (kullanicinin GUI'de
-        # gozlemledigi durum). Onunde servis edilmemis arac varsa, ETA'yi
+        # secilip hic ilerlememesine yol aciyordu (GUI'de gozlemlenen
+        # durum). Onunde servis edilmemis arac varsa, ETA'yi
         # o araclarin ogrenilen discharge_rate'e gore boşalma suresiyle de
         # karsilastirip BUYUK olani aliyoruz -- boylece verilen yesil suresi
         # "kuyruk hic yokmus gibi" degil, gercekci bir beklentiyi yansitir.
@@ -259,8 +259,8 @@ class OptimalGroundTruthStrategy(BaseAdaptiveStrategy):
 
     def is_starvation_guard_active(self, engine, exclude_direction, params):
         # `emergency_starvation_override_limit` artik opsiyonel: parametre
-        # yoksa/None ise emergency oncelik kosulsuzdur (kullanicinin acik
-        # talebi). Parametre verilmisse (ör. v1'in mevcut kaydinda 60.0),
+        # yoksa/None ise emergency oncelik kosulsuzdur (tasarim
+        # karari). Parametre verilmisse (ör. v1'in mevcut kaydinda 60.0),
         # eski "baska yon kritik ac mi" korumasi aynen calismaya devam eder
         # -- bu sayede v1'in tarihsel/belgelenen davranisi degismez, yeni
         # versiyonlar sadece bu parametreyi params'tan cikararak kosulsuz
@@ -561,13 +561,13 @@ class OptimalGroundTruthStrategy(BaseAdaptiveStrategy):
         )
         cycle_note = ""
 
-        # Kullanıcının açık talebi: bir cycle içinde talebi olan HER yöne,
+        # Tasarım gereksinimi: bir cycle içinde talebi olan HER yöne,
         # ne kadar beklemiş olursa olsun, tekrar sırası gelmeden aynı yön
         # ikinci kez yeşil olmasın (round-robin garantisi). Bu yüzden
         # "eligible" burada saf demand>0 + henüz servis edilmemiş anlamına
         # gelir; ek bir minimum-bekleme eşiği yok -- öyle bir eşik, az önce
         # kuyruğa giren bir yönü "henüz hak etmedi" diye atlayıp tam olarak
-        # kullanıcının şikayet ettiği "aynı yol üst üste yeşil alıyor"
+        # gözlemlenen "aynı yol üst üste yeşil alıyor"
         # davranışını üretiyordu. `params.cycle_fairness_enabled=False` iken
         # bu garanti tamamen devre dışı -- yön seçimi saf index'e göre yapılır.
         if unserved_directions and raw_best_direction not in unserved_directions:

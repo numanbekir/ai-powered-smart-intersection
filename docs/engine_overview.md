@@ -9,7 +9,7 @@ Motor iki thread çalıştırır:
 - **Controller thread** (`self.controller.run`) — sinyal fazlarını seçer/uygular.
 - **Spawner thread** (`self.generateVehicles`) — yeni araçları rastgele yön/tip/dönüş niyetiyle üretir.
 
-İkisi de `engine.vehicles[direction][lane]` listesini paylaşır. Bu paylaşım, bu oturumda bulunan bir hataya kadar tehlikeliydi (aşağıya bakın).
+İkisi de `engine.vehicles[direction][lane]` listesini paylaşır. Bu paylaşım, aşağıda anlatılan hata düzeltilene kadar tehlikeliydi (aşağıya bakın).
 
 Zaman, gerçek duvar-saatiyle değil, **tek bir otoriter sayaçla** (`simulation_elapsed`) ilerler: her ana döngü tick'i `advance_simulation_time()` ile `current_simulation_delta` kadar (= `(1/fps) * playback_speed`) artırılır. `scaled_sleep()` (controller ve spawner thread'lerinin "bekleme" ihtiyaçları için) gerçek zamanda uyumaz, bu sayacın hedefe ulaşmasını bekler. Bu tasarımın amacı: `playback_speed` ne olursa olsun (1x veya 8x), **aynı (senaryo, seed) aynı sonucu üretsin** — ana döngü CPU yükü altında yavaşlasa bile.
 
@@ -21,7 +21,7 @@ Zaman, gerçek duvar-saatiyle değil, **tek bir otoriter sayaçla** (`simulation
 
 **Doğuş noktası:** Araç, şeridin sabit doğuş noktasında ya da şeridin son aracı henüz oradan ayrılmadıysa onun arkasında doğar (`Vehicle.place_at_spawn()`, ilk `move()` çağrısında ana döngüde). Önceki sürümde doğuş noktası her doğuşta geriye itiliyor ve hiç geri gelmiyordu. Uzun koşularda araçlar kavşaktan binlerce piksel uzakta doğuyor, talep fiilen seyreliyordu. 120 saniyelik koşularda etkisi küçüktü, 20 dakikalık koşuda doğuş mesafesi 322 pikselden 4530 piksele çıkıyordu.
 
-## Hareket modeli ve bu oturumda düzeltilen dönüş-kayması hatası
+## Hareket modeli ve düzeltilen dönüş-kayması hatası
 
 Araçlar sabit hızla hareket eder (`current_speed() = base_speed * playback_speed`) — ivme/yavaşlama/car-following fiziği yoktur. Bu, ışık algoritmalarını karşılaştırmak için yeterlidir ama "gerçekçi trafik fiziği" iddiası için bir basitleştirmedir.
 
@@ -43,7 +43,7 @@ Araçlar sabit hızla hareket eder (`current_speed() = base_speed * playback_spe
 
 `SimulationEngine(..., headless=True)` render yapmadan (pygame ekranı olmadan) aynı mantığı çalıştırır — `tools/run_batch_tests.py`'in tüm batch koşuları bunu kullanır. Determinizm garantisi headless ve render'lı modda aynıdır (aynı tick/saat mekanizması).
 
-## Bilinen sınırlamalar (bu oturumda tespit edilen, henüz değişmeyen)
+## Bilinen sınırlamalar (tespit edilen, henüz değişmeyen)
 
 - `queue_length_average`/`queue_length_peak`, tick başına ağırlıksız örnekleniyor; `playback_speed` arttıkça örnekleme çözünürlüğü kabalaşır (daha az, daha büyük-aralıklı örnek). Aynı batch içinde tüm koşular aynı `playback_speed` kullandığı sürece (ki `tools/run_batch_tests.py` böyle yapıyor) karşılaştırmalar adil kalır; farklı `playback_speed`'lerde alınan mutlak sayılar doğrudan karşılaştırılmamalı.
 - Tek kavşak modeli — koridor/ağ senkronizasyonu test edilemez.
