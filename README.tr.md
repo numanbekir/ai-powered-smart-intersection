@@ -140,3 +140,7 @@ python tools/verify_decisions.py       # her yeşilin sonradan denetimi
 - `metrics_definitions.md`: metrik tanımları.
 - `scenario_capacity_calibration.md`: kapasite, senaryo yoğunlukları, gerçek kayıtlarla karşılaştırma.
 - `results_and_limits.md`: tam sonuç tabloları ve modelin kapsamadığı şeyler.
+
+## Lisans
+
+MIT, bkz. [LICENSE](LICENSE). `assets/fonts/` altındaki Noto Sans fontları SIL Open Font License ile dağıtılıyor (`assets/fonts/OFL.txt`).

@@ -138,3 +138,7 @@ In `docs/`:
 - `metrics_definitions.md`: metric definitions.
 - `scenario_capacity_calibration.md`: capacity, scenario demand levels, comparison with real recordings.
 - `results_and_limits.md`: full result tables and what the model does not cover.
+
+## License
+
+MIT, see [LICENSE](LICENSE). The Noto Sans fonts in `assets/fonts/` are under the SIL Open Font License (`assets/fonts/OFL.txt`).
