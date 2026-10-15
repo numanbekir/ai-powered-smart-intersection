@@ -1,50 +1,69 @@
 # Simülasyon Motoru (`simulation/engine.py`, `simulation/vehicle.py`)
 
-`SimulationEngine`, projenin çalışma zamanı çekirdeğidir: araç doğuşu, hareket/fizik, sinyal fazı yönetimi, metrik toplama, render (veya headless çalıştırma) hepsi buradan yürütülür. Bu doküman motorun nasıl çalıştığını ve neden bu şekilde tasarlandığını özetler.
+`SimulationEngine` araç doğuşunu, hareketi, sinyal fazlarını, metrik toplamayı ve çizimi yürütür. Pencereli ve penceresiz (headless) çalışma aynı kodu kullanır.
 
-## Çalışma zamanı yapısı: iki thread + tek otoriter saat
+## Çalışma zamanı: iki iş parçacığı, tek saat
 
-Motor iki thread çalıştırır:
+Ana döngünün yanında iki iş parçacığı çalışır:
 
-- **Controller thread** (`self.controller.run`) — sinyal fazlarını seçer/uygular.
-- **Spawner thread** (`self.generateVehicles`) — yeni araçları rastgele yön/tip/dönüş niyetiyle üretir.
+- Kontrolcü (`controller.run`): sinyal fazlarını seçer ve uygular.
+- Araç üretici (`generateVehicles`): yeni araçları rastgele yön, tür ve dönüş niyetiyle üretir.
 
-İkisi de `engine.vehicles[direction][lane]` listesini paylaşır. Bu paylaşım, aşağıda anlatılan hata düzeltilene kadar tehlikeliydi (aşağıya bakın).
+Zaman duvar saatiyle değil tek bir sayaçla (`simulation_elapsed`) ilerler. Her adımda sayaç `oynatma hızı / fps` kadar artar. `scaled_sleep()` gerçek zamanda uyumaz, sayacın hedefe ulaşmasını bekler. Böylece oynatma hızı ne olursa olsun aynı senaryo ve tohum aynı sonucu verir.
 
-Zaman, gerçek duvar-saatiyle değil, **tek bir otoriter sayaçla** (`simulation_elapsed`) ilerler: her ana döngü tick'i `advance_simulation_time()` ile `current_simulation_delta` kadar (= `(1/fps) * playback_speed`) artırılır. `scaled_sleep()` (controller ve spawner thread'lerinin "bekleme" ihtiyaçları için) gerçek zamanda uyumaz, bu sayacın hedefe ulaşmasını bekler. Bu tasarımın amacı: `playback_speed` ne olursa olsun (1x veya 8x), **aynı (senaryo, seed) aynı sonucu üretsin** — ana döngü CPU yükü altında yavaşlasa bile.
+Ana döngü, iki iş parçacığı o adımdaki işini bitirip yeniden beklemeye geçmeden sonraki adıma ilerlemez (`wait_for_workers()`). İşlemci yükü altında da sonuç değişmez.
 
 ## Determinizm
 
-`(senaryo, kontrolcü modu, kontrolcü versiyonu, state provider, seed)` beşlisi sabitken simülasyon deterministik olmalıdır (`random.seed(seed)`). `tools/verify_determinism.py` bunu doğrular: aynı seed'le, yapay CPU yükü olmadan art arda iki koşu **birebir aynı** sonucu vermeli.
+Senaryo, kontrolcü, gözlem kaynağı ve tohum sabitken sonuç birebir aynıdır. `tools/verify_determinism.py` bunu art arda iki koşuyla ve yapay işlemci yükü altında denetler. Motorda, kontrolcüde ya da karar kuralında yapılan her değişiklikten sonra çalıştırılır.
 
-**Tick bariyeri:** Ana döngü, controller ve spawner thread'leri o tick'teki işini bitirip yeniden beklemeye geçmeden bir sonraki tick'e ilerlemez (`wait_for_workers()`, `scaled_sleep()` içindeki uyanma hedefi kaydı). Önceden bir doğuş, CPU yükü altında tick sınırının öbür tarafına düşüp kuyruk sayısını ±1 kaydırabiliyordu ve bu "kabul edilmiş istisna" olarak belgelenmişti. Bariyerle bu fark kalktı: `verify_determinism.py`'nin yük altındaki testi de birebir aynı sonucu verir.
+## Hareket modeli
 
-**Doğuş noktası:** Araç, şeridin sabit doğuş noktasında ya da şeridin son aracı henüz oradan ayrılmadıysa onun arkasında doğar (`Vehicle.place_at_spawn()`, ilk `move()` çağrısında ana döngüde). Önceki sürümde doğuş noktası her doğuşta geriye itiliyor ve hiç geri gelmiyordu. Uzun koşularda araçlar kavşaktan binlerce piksel uzakta doğuyor, talep fiilen seyreliyordu. 120 saniyelik koşularda etkisi küçüktü, 20 dakikalık koşuda doğuş mesafesi 322 pikselden 4530 piksele çıkıyordu.
+Araçlar ivmelenir, fren yapar ve öndeki aracı izler. Değerler piksel ve simülasyon saniyesi cinsindendir:
 
-## Hareket modeli ve düzeltilen dönüş-kayması hatası
+| Değer | Anlamı |
+|---|---|
+| `acceleration` = 25 | hızlanma |
+| `comfortBraking` = 40 | olağan fren |
+| `hardBraking` = 90 | ışık değiştiği anda duruş kararında kullanılan sert fren |
+| `timeHeadway` = 0,7 | öndeki araçla bırakılan zaman aralığı |
+| `startGap` = 5 | duran aracın kalkması için önünde açılması gereken boşluk |
+| `stoppingGap` = 25 | duran araçlar arasındaki mesafe |
+| `turnSpeedFactor` = 0,7 | dönüşteki hız oranı |
 
-Araçlar sabit hızla hareket eder (`current_speed() = base_speed * playback_speed`) — ivme/yavaşlama/car-following fiziği yoktur. Bu, ışık algoritmalarını karşılaştırmak için yeterlidir ama "gerçekçi trafik fiziği" iddiası için bir basitleştirmedir.
+Kurallar:
 
-**Bulunan ve düzeltilen hata:** Bir araç dönüş yapmadan önce, dönüş tetik noktasına (`turnTriggerPoints`) kadar tam `speed` kadar ilerliyordu. `playback_speed` yükseldiğinde (örn. 8x) bu adım büyüdüğü için araç tetik noktasını fazlasıyla aşıyor, dönüş oradan başladığı için **final pozisyon playback_speed'e bağlı olarak kayıyordu** (aynı senaryo/seed'de 1x'te ve 8x'te farklı bitiş noktası). Düzeltme: `Vehicle.clamped_step_to_trigger()` — adımı, tetik noktasını aşmayacak şekilde sınırlıyor. Düzeltmeden sonra aynı (senaryo, seed) 1x ve 8x'te **birebir aynı** final pozisyonu veriyor (ölçülmüş, doğrulanmış).
+- Takip: hız, öndeki boşluğun izin verdiği değeri aşmaz. Duran bir aracın arkasında yavaşlama fren eğrisiyle yapılır, uzun süre sürünerek yaklaşma olmaz.
+- Kalkış: duran araç önünde `startGap` kadar boşluk açılmadan kalkmaz. Kuyruk tek blok hâlinde değil, sırayla çözülür.
+- Dur çizgisi: ışık yeşil değilken araç çizgide durur. Işık değiştiği anda duramayacak kadar yakın olan araç geçer.
+- Kavşak içi: ışık yeşil olsa da başka yönden gelen bir araç kavşak içindeyken çizgide beklenir.
+- Dönüş: dönen araç aynı sabit yolu daha düşük hızla izler ve çıkış yolundaki araçları takip eder.
 
-## Araç oluşturma sırası: bulunan ikinci hata (thread-safety)
+Ölçülen doygun kapasite yön başına 1,00 araç/sn'dir (iki şerit, şerit başına 2 sn'de bir araç). `tools/measure_current_capacity.py` ile ölçülür. `tools/verify_vehicle_motion.py` dört kuralı denetler: hız sıçrama yapmadan değişir, öndeki araç kalkınca arkadaki 1,5 sn içinde kalkar, önü boş olan araç durmaz, duran araçlar üst üste binmez.
 
-`Vehicle.__init__` içinde araç, `self.image` (pygame yüzeyi, disk okuması gerektiren `load_vehicle_image()` ile set edilir) atanmadan **önce** paylaşılan `engine.vehicles[direction][lane]` listesine ekleniyordu. Bu, controller thread'i tam bu dar pencerede (`append` ile `self.image` ataması arası) o araca `.image` üzerinden erişirse `AttributeError` ile çökmesine yol açıyordu — `optimal_ground_truth_strategy.py`'nin emergency-araç ETA hesaplaması (`vehicle.image.get_rect()` kullanıyor) bu şekilde çökebiliyordu, özellikle yoğun/uzun koşularda. Düzeltme: araç tam olarak hazırlandıktan (image dahil) **sonra** listeye eklenir — klasik "yalnızca tam kurulmuş nesneyi paylaş" deseni.
+Kapasitenin gerçek kavşak kayıtlarıyla ilişkisi için `docs/scenario_capacity_calibration.md`.
 
-## Sinyal fazı yaşam döngüsü
+## Doğuş noktası
 
-`AdaptiveSignalController` (adaptif modda) veya `FixedTimeController` (sabit modda) hangi yönün ne kadar yeşil alacağına karar verir. Adaptif modda gerçek karar, `strategy.choose_next_phase(state, params, engine)`'e delege edilir (bkz. `docs/strategy_structure.md`). Faz geçişleri: yeşil → sarı (`yellow_time`) → bir sonraki yönün yeşili.
+Araç, şeridin sabit doğuş noktasında ya da şeridin son aracı henüz oradan ayrılmadıysa onun arkasında doğar (`Vehicle.place_at_spawn()`).
+
+## Simülasyon penceresi ayrı süreçte çalışır
+
+Arayüz Tkinter, simülasyon penceresi pygame kullanır. İkisi aynı süreçte çalıştığında simülasyondan sonra açılan bir arayüz penceresi uygulamayı çökertiyordu. Simülasyon bu yüzden ayrı bir süreçte çalıştırılır (`simulation/runner.py`), sonuç ana sürece bir boru üzerinden döner.
+
+## Sağ panel
+
+`simulation/panel.py` pencerenin sağındaki paneli çizer: yön tablosu (ışık, araç sayısı, bekleme, geçen araç), son karar, koşu özeti ve son yeşiller. Kameralı kontrolde tabloda kameranın saydığı araç sayısı gösterilir, kesin sayıdan ayrıldığında fark ayrıca yazılır.
 
 ## Metrik toplama
 
-`update_queue_metrics()` her tick'te bir kez çağrılır ve o anki kuyruk uzunluğunu örnekler (`queue_samples`). `Vehicle.update_signal_wait_time()` ise bir araç sinyal yüzünden bekliyorken her tick `self.waitTime`'a **gerçek simüle-saniye** (`current_simulation_delta`) ekler — bu, wait-time tabanlı metrikleri playback_speed'den bağımsız ve güvenilir kılar. Detaylı metrik tanımları için `docs/metrics_definitions.md`.
+Bekleme süresi, araç sinyal yüzünden dururken her adımda simülasyon saniyesi cinsinden birikir, oynatma hızından bağımsızdır. Tanımlar `docs/metrics_definitions.md` dosyasındadır.
 
-## Headless çalıştırma
+## Bilinen sınırlar
 
-`SimulationEngine(..., headless=True)` render yapmadan (pygame ekranı olmadan) aynı mantığı çalıştırır — `tools/run_batch_tests.py`'in tüm batch koşuları bunu kullanır. Determinizm garantisi headless ve render'lı modda aynıdır (aynı tick/saat mekanizması).
-
-## Bilinen sınırlamalar (tespit edilen, henüz değişmeyen)
-
-- `queue_length_average`/`queue_length_peak`, tick başına ağırlıksız örnekleniyor; `playback_speed` arttıkça örnekleme çözünürlüğü kabalaşır (daha az, daha büyük-aralıklı örnek). Aynı batch içinde tüm koşular aynı `playback_speed` kullandığı sürece (ki `tools/run_batch_tests.py` böyle yapıyor) karşılaştırmalar adil kalır; farklı `playback_speed`'lerde alınan mutlak sayılar doğrudan karşılaştırılmamalı.
-- Tek kavşak modeli — koridor/ağ senkronizasyonu test edilemez.
-- Yaya fazı modellenmiyor; `min_green` değerleri (5s) bu nedenle gerçek kentsel kavşaklara göre iyimser.
+- Tek kavşak modellenir. Koridor ya da ağ eşgüdümü denenemez.
+- Yaya fazı yoktur. 5 sn'lik en kısa yeşil gerçek bir kent kavşağına göre iyimserdir.
+- Aynı anda tek yön yeşil alır. Karşılıklı iki yönün birlikte geçtiği faz düzeni modellenmez.
+- Üst üste binme denetimi dönüşün ortasındaki araçları kapsamaz.
+- Kavşağı geçen araçlar bellekten silinmez. Çok uzun koşularda bellek kullanımı artar.
+- Kuyruk uzunluğu adım başına ağırlıksız örneklenir. Farklı oynatma hızlarında alınan mutlak değerler birbiriyle karşılaştırılmaz.

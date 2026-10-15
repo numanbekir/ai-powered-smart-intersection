@@ -1,21 +1,21 @@
 # Metrik Tanımları
 
-Bu doküman, `simulation/engine.py`'nin `collect_results()` metodunda hesaplanıp her deney sonucuna (`data/batches/*.jsonl`, batch raporları) yazılan metrikleri tanımlar. Kaynak: `simulation/metrics.py` (`summarize_direction`) ve `engine.py`'deki `collect_results`.
+Her koşunun sonucuna yazılan metrikler burada tanımlanır. Hesap `simulation/engine.py` içindeki `collect_results()` ve `simulation/metrics.py` içindeki `summarize_direction()` ile yapılır.
 
-Tek bir metrik yeterli değildir — düşük ortalama bekleme, yüksek `max_wait` (starvation) ile birlikte gelebilir. Değerlendirme her zaman birden fazla metrik grubuyla birlikte yapılmalı.
+Tek bir metrik yeterli değildir. Düşük ortalama bekleme, çok uzun bekleyen tek tek araçlarla birlikte görülebilir. Değerlendirme birden fazla metrik grubuyla yapılır.
 
 ## 1. Bekleme (wait) metrikleri
 
-Bir aracın `waitTime`'ı, sinyal kırmızıyken duruyorken tick başına **gerçek simüle-saniye** (`current_simulation_delta`) eklenerek birikir (`Vehicle.update_signal_wait_time`) — bu nedenle `playback_speed`'den bağımsız, güvenilir bir ölçümdür.
+Bir aracın bekleme süresi (`waitTime`), araç sinyal yüzünden dururken her adımda simülasyon saniyesi cinsinden birikir (`Vehicle.update_signal_wait_time`). Oynatma hızından bağımsızdır.
 
 | Metrik | Tanım |
 |---|---|
 | `overall_avg_wait` | Kesişimi geçen tüm araçların ortalama bekleme süresi |
-| `overall_median_wait` (`overall_wait_p50`) | Medyan bekleme — uç değerlerden daha az etkilenir, "tipik" davranışı gösterir |
-| `overall_max_wait` | Tek bir aracın gördüğü en yüksek bekleme — yüksekse starvation/adalet sorununa işaret eder |
-| `overall_wait_p90` / `p95` / `p99` | Kuyruk (tail latency) davranışı — "en kötü %10/%5/%1'lik dilim ne kadar bekliyor" |
+| `overall_median_wait` (`overall_wait_p50`) | Ortanca bekleme. Uç değerlerden az etkilenir |
+| `overall_max_wait` | Tek bir aracın gördüğü en uzun bekleme. Yüksek değer bir yönün ihmal edildiğine işaret eder |
+| `overall_wait_p90` / `p95` / `p99` | En çok bekleyen %10, %5 ve %1'lik dilimin beklemesi |
 
-**Önemli kapsam notu:** Bu metrikler yalnızca **geçen** (crossed) araçları kapsar. Koşu bittiğinde hâlâ kuyrukta olan araçlar bu ortalamaya girmez. Talebin kapasiteyi aştığı senaryolarda bu, `overall_avg_wait`'i olduğundan iyi gösterir. Bu yüzden aşağıdaki tamamlayıcı metrikler birlikte okunmalıdır.
+Önemli kapsam notu: Bu metrikler yalnızca geçen (crossed) araçları kapsar. Koşu bittiğinde hâlâ kuyrukta olan araçlar bu ortalamaya girmez. Talebin kapasiteyi aştığı senaryolarda bu, `overall_avg_wait`'i olduğundan iyi gösterir. Bu yüzden aşağıdaki tamamlayıcı metrikler birlikte okunmalıdır.
 
 ### Isınma süresi, gecikme ve geçemeyen araçlar
 
@@ -27,7 +27,7 @@ Bir aracın `waitTime`'ı, sinyal kırmızıyken duruyorken tick başına **ger�
 | `vehicles_uncrossed` | Bunlardan koşu bittiğinde hâlâ kavşağı geçememiş olanlar |
 | `uncrossed_avg_wait` | Geçemeyen araçların koşu sonuna kadar biriken ortalama beklemesi |
 
-`tools/baseline_sweep_report.py` iki grubu birleştirerek **tüm ölçülen araçların** ortalama beklemesini raporlar: `(overall_avg_wait × geçen + uncrossed_avg_wait × geçemeyen) / vehicles_measured`. Geçemeyen araçların beklemesi koşu sonunda kesildiği için bu değer doygun senaryolarda hâlâ alt sınırdır.
+`tools/baseline_sweep_report.py` iki grubu birleştirerek tüm ölçülen araçların ortalama beklemesini raporlar: `(overall_avg_wait × geçen + uncrossed_avg_wait × geçemeyen) / vehicles_measured`. Geçemeyen araçların beklemesi koşu sonunda kesildiği için bu değer doygun senaryolarda hâlâ alt sınırdır.
 
 ## 2. Kuyruk (queue) metrikleri
 
@@ -36,35 +36,31 @@ Bir aracın `waitTime`'ı, sinyal kırmızıyken duruyorken tick başına **ger�
 | `queue_length_average` | Simülasyon boyunca her tick'te örneklenen kuyruk uzunluğunun ortalaması |
 | `queue_length_peak` | Gözlenen en yüksek kuyruk uzunluğu |
 
-**Ne sayılıyor:** Kuyruk uzunluğu, o yönde henüz kavşağı geçmemiş **tüm** araçların sayısıdır. Duran araçların yanında kavşağa yaklaşmakta olanları da içerir, yani dar anlamda "bekleyen kuyruk" değil "yaklaşımdaki araç sayısı"dır.
+Ne sayılıyor: Kuyruk uzunluğu, o yönde henüz kavşağı geçmemiş tüm araçların sayısıdır. Duran araçların yanında kavşağa yaklaşmakta olanları da içerir, yani dar anlamda "bekleyen kuyruk" değil "yaklaşımdaki araç sayısı"dır.
 
-**Bilinen metodolojik not:** `update_queue_metrics()` her tick'te bir örnek alır (ağırlıksız). `playback_speed` arttıkça bir tick daha fazla simüle-saniyeyi temsil eder, yani örnekleme çözünürlüğü kabalaşır — ani/kısa süreli sıçramalar yüksek `playback_speed`'de kaçırılabilir. Aynı batch içindeki tüm koşular aynı `playback_speed` kullandığı sürece (bu projedeki tüm batch koşuları 8x kullanıyor) karşılaştırmalar birbirine göre adildir; farklı `playback_speed` değerlerinde alınmış mutlak sayılar doğrudan karşılaştırılmamalıdır.
+Örnekleme notu: kuyruk her adımda bir kez, ağırlıksız örneklenir. Oynatma hızı arttıkça bir adım daha uzun bir süreyi temsil eder ve kısa süreli sıçramalar kaçabilir. Tarama koşularının hepsi aynı oynatma hızını kullanır, bu yüzden birbirleriyle karşılaştırılabilir. Farklı oynatma hızlarında alınan mutlak değerler karşılaştırılmaz.
 
-## 3. Throughput metrikleri
+## 3. Geçen araç metrikleri
 
 | Metrik | Tanım |
 |---|---|
 | `total_crossed` | Simülasyon boyunca kesişimi geçen toplam araç sayısı |
-| `normal_vehicle_crossed` / `emergency_crossed` | Aynı sayının normal/emergency araç kırılımı |
+| `normal_vehicle_crossed` / `emergency_crossed` | Aynı sayının olağan araç ve acil durum aracı olarak ayrımı |
 
-## 4. Emergency-araç metrikleri
+## 4. Acil durum aracı metrikleri
 
 | Metrik | Tanım |
 |---|---|
-| `emergency_spawned` | Doğan emergency araç sayısı |
-| `emergency_crossed` | Geçen emergency araç sayısı |
-| `emergency_avg_wait` / `emergency_max_wait` | Emergency araçların ortalama/maksimum bekleme süresi |
-| `emergency_wait_p95` / `p99` | Emergency araç bekleme kuyruğu |
-| `emergency_hold_count` / `emergency_total_hold_time` / `emergency_hold_max_time` | Devam eden bir yeşilin, içindeki emergency aracı geçirmek için kaç kez / toplam ne kadar / tek seferde en fazla uzatıldığı (yalnızca hold mantığı olan stratejilerde dolu olur — `optimal_ground_truth`'ta `get_green_extension` hook'u bunu üretir). Muhasebesi `adaptive_controller.py`'nin `run_green_phase()`'inde, hook'un döndürdüğü `extension` değerinden jenerik olarak yapılır — herhangi bir strateji bu hook'u tanımlarsa otomatik çalışır. |
-| `emergency_hold_success_count` | Hold alan emergency araçlardan kaç tanesinin gerçekten kesişimi geçtiği (`vehicle.receivedEmergencyHold` bayrağı üzerinden, `simulation/vehicle.py`'de aracın `crossed` olduğu anda sayılır) |
-| `priority_activation_count` | Bir fazın (ilk seçim veya mid-phase preemption) emergency önceliği yüzünden verildiği toplam olay sayısı. `choose_next_phase`'in döndürdüğü `decision_meta={"emergency_priority": True}` (normal faz seçimi) veya `should_preempt`'in `True` dönmesi (preemption) sayılır — strateji-bağımsız, `adaptive_controller.py`'de tutulur (bkz. `docs/strategy_structure.md`'deki `decision_meta` sözleşmesi). |
+| `emergency_spawned` | Doğan acil durum aracı sayısı |
+| `emergency_crossed` | Geçen acil durum aracı sayısı |
+| `emergency_avg_wait` / `emergency_max_wait` | Acil durum araçlarının ortalama ve en uzun beklemesi |
+| `emergency_wait_p95` / `p99` | Acil durum araçlarında en çok bekleyen %5 ve %1'lik dilimin beklemesi |
+| `emergency_hold_count` / `emergency_total_hold_time` / `emergency_hold_max_time` | Yanan bir yeşilin, o yöndeki acil durum aracını geçirmek için kaç kez, toplam ne kadar ve tek seferde en fazla ne kadar uzatıldığı |
+| `emergency_hold_success_count` | Uzatma alan acil durum araçlarından kaçının kavşağı geçtiği |
+| `priority_activation_count` | Bir yeşilin acil durum önceliğiyle verildiği ya da yanan yeşilin bu yüzden kesildiği olay sayısı |
 
-Bekleme metriklerindeki "yalnızca geçenler dahil" kısıtı emergency metrikleri için de geçerlidir. `emergency_priority_enabled=False` olan bir kontrolcü versiyonunda (bkz. `docs/strategy_structure.md`) bu beş metriğin tamamı yapısal olarak 0 kalır — emergency araçlar hiç özel muamele görmediği için ölçülecek bir hold/preemption/priority olayı olmaz; bu bir hata değil, switch'in beklenen sonucudur.
+Bekleme metriklerindeki "yalnızca geçenler" kısıtı acil durum metrikleri için de geçerlidir. Sabit süreli kontrolde uzatma ve öncelik sayıları 0 kalır, çünkü acil durum aracına özel bir işlem yapılmaz.
 
 ## 5. Yön bazlı (per-direction) metrikler
 
-Her yön (`right`/`down`/`left`/`up`) için ayrıca `avg_wait`, `median_wait`, `max_wait`, `crossed`, `queue_length_average`, `queue_length_peak`, `wait_p90`/`p95`/`p99` hesaplanır (`summarize_direction`) — bir kontrolcünün belirli bir yönü sistemli şekilde ihmal edip etmediğini görmek için kullanılır.
-
-## 6. `discharge_rate` (metrik değil, dahili kavram)
-
-Metrik olarak dışarı raporlanmaz ama `optimal_ground_truth_strategy.py`'nin karar mantığının merkezinde yer alır: bir yön yeşilken, o fazda kaç aracın gerçekten geçtiğinin (`crossed` artışı / geçen yeşil süresi) EMA (üstel hareketli ortalama, α=0.35) ile öğrenilmiş hâli. "Kuyruğu gerçekten temizlemek için ne kadar yeşil gerekli" hesabının (`queue_count / discharge_rate`) girdisidir.
+Her yön (`right`, `down`, `left`, `up`) için ayrıca `avg_wait`, `median_wait`, `max_wait`, `crossed`, `queue_length_average`, `queue_length_peak` ve `wait_p90` / `p95` / `p99` hesaplanır. Bir kontrolcünün belirli bir yönü sürekli ihmal edip etmediği buradan görülür.

@@ -1,73 +1,74 @@
-# Strateji Yapısı (`controllers/strategies/`)
+# Karar Kuralı (`controllers/strategies/demand_strategy.py`)
 
-Bu klasör yalnızca 2 dosya içerir:
+Adaptif kontrolün tek bir karar kuralı vardır: `DemandStrategy`. Kural simülasyonun içini okumaz, yalnızca dört yaklaşım kolunun gözlemini alır. Aynı kod iki farklı gözlemle çalıştırılır:
 
-| Dosya | Rolü |
+| Kontrolcü | Gözlem kaynağı |
 |---|---|
-| `base_strategy.py` | Soyut sözleşme |
-| `optimal_ground_truth_strategy.py` | `ground_truth`'un tek stratejisi |
+| `adaptive_ground_truth` (Adaptif - Tam Bilgi) | `GroundTruthStateProvider`: kamera karesine giren araçların kesin sayısı |
+| `adaptive_camera` (Adaptif - Kamera) | `YoloStateProvider`: aynı karede YOLO11n tespitleri, simülasyon saniyesinde bir kez |
 
-## Sözleşme: `base_strategy.py`
+İki kaynak aynı görüş alanını kullanır. Aralarındaki fark tespit hatasından ve bir saniyelik gözlem aralığından gelir, bu fark kameranın kontrol kalitesine maliyeti olarak ölçülür.
 
-```python
-class BaseAdaptiveStrategy:
-    strategy_key = "base"
+## Gözlem
 
-    def choose_next_phase(self, state, params, engine):
-        raise NotImplementedError
+Her yön için:
+
+- `visible_count`: dur çizgisine henüz gelmemiş, karede görünen araç sayısı. Bir aracın sayılması için en az %30'unun kare içinde olması gerekir.
+- `is_saturated`: bir araç kare kenarına 70 pikselden yakınsa doğrudur. Kuyruk büyük olasılıkla kare dışında sürüyordur, sayı alt sınırdır.
+- `emergency`: en yakın acil durum aracının türü, dur çizgisine uzaklığı, durup durmadığı ve önündeki araç sayısı. Yoksa `None`.
+
+## Yön seçimi
+
+```
+index = araç sayısı + λ · max(0, kırmızı süre − yumuşak sınır)
 ```
 
-Bu, adaptif stratejinin uyması gereken tek soyut sözleşmedir: `state` (provider'dan gelen soyut trafik durumu — `{"right": N, "down": N, ...}`), `params` (o kontrolcü versiyonunun ayarlanabilir parametreleri) ve `engine`'i alır; `(direction, green_time, reason, decision_meta)` döndürür. `decision_meta` bir dict'tir, en az `{"emergency_priority": bool}` içerir — `adaptive_controller.py` bunu, strateji-özel karar mantığını bilmeden emergency metriklerini (`priority_activation_count`) doğru saymak için kullanır. `choose_phase()` geriye dönük uyumluluk için 3-tuple (meta'sız) dönen bir stratejiyi de kabul eder (`decision_meta={}` varsayılır). `controllers/adaptive_controller.py`'deki `AdaptiveSignalController`, hangi strateji sınıfının kullanılacağını `STRATEGY_MAP` (strategy_key → sınıf) üzerinden çözer; faz yaşam döngüsü, min/max green sınırları, emergency metrik muhasebesi gibi ortak mekanikleri kendisi yönetir, kararın içeriğini stratejiye bırakır. Yeni bir algoritma eklemek = yeni bir strateji sınıfı + `STRATEGY_MAP` girdisi + `data/controller_versions.json`'a bir kayıt; `adaptive_controller.py`'a dokunmadan.
+En yüksek indeksli yön seçilir. Bunun üstünde bir tur adaleti kuralı vardır: aracı olan her yön bir kez yeşil almadan hiçbir yön ikinci kez yeşil almaz. Varsayılan değerler λ = 1,5 ve yumuşak sınır 20 sn.
 
-## `optimal_ground_truth_strategy.py` — `ground_truth`'un tek stratejisi
+Ölçülen davranış: birden çok yönde araç varken verilen yeşillerin %97-100'ünde seçilen yön en uzun süredir kırmızı olan yöndür. Yani yoğun trafikte sıra pratikte dönüşümlüdür. Kuralın sabit süreden ayrıldığı yer aracı olmayan yönü atlaması ve yeşil süresini araç sayısına göre vermesidir.
 
-Ground truth'un tam-bilgi avantajını (her aracın konumu, hızı, bekleme süresi bilinir) kuyruk teorisinden gelen az sayıda (~10) gerekçeli parametreyle kullanan bir karar mekanizması — sezgisel, elle-ayarlanmış onlarca ağırlık yerine. `data/controller_versions.json`'da bu stratejiyi kullanan üç kontrolcü versiyonu var: `adaptive_optimal_ground_truth` (v1, orijinal), `adaptive_optimal_ground_truth_v2` (bkz. aşağıda) ve `adaptive_optimal_ground_truth_v3` — aynı `strategy_key`, farklı `params`.
+## Yeşil süresi
 
-- **Yön seçimi:** `index[d] = queue_count[d] + λ * excess_wait[d]` — toplam beklemeyi minimize eden greedy-optimal kural + adalet kısıtının fiyatlandırması. Bir **cycle-fairness** katmanı bunu sınırlar: bir turda henüz servis edilmemiş aktif bir yön varsa, index'e göre kazanan zaten servis edilmişse unserved yönler arasından en yüksek index'e sahip olan seçilir. Bu işaretleme (`mark_cycle_served`), stratejinin kendi içinde değil, `adaptive_controller.py`'nin `select_and_prepare_phase()`'inde -- tüm override'lar (initial_selection, single_demand) çözüldükten sonra, kesinleşen yönle -- tek noktadan yapılır. Bu katman `params.cycle_fairness_enabled` (varsayılan `True`) ile tamamen kapatılabilir; kapalıyken yön seçimi saf `index[d]` en yükseğine göre yapılır, unserved yön garantisi devre dışı kalır.
-- **Yeşil süresi:** `queue_count[d] / discharge_rate[d]` — "kuyruğu gerçekten temizlemek için ne kadar gerekiyor" (discharge_rate, geçmiş fazlardan EMA ile öğrenilir) — 2+ yön aktifken `multi_direction_max_green` tavanına clamp'lenir (bkz. aşağıdaki "clamp neden gevşetilmedi" notu). v3'te bu tavan artık sabit değil: `params.demand_share_scaling_exponent` (v1/v2'de 0 = kapalı) >0 iken, seçilen yönün aktif talep içindeki payına göre ölçekleniyor.
-- **Emergency:** `params.emergency_priority_enabled` (varsayılan `True`) açıkken, ETA'ya dayalı **gerçek** mid-phase preemption (`should_preempt`) ve hold (`get_green_extension`) — sabit bir süre değil, ground truth'taki konum/hız verisinden hesaplanan kesin süre. **Kapalıyken** (`False`) emergency araçlar hiçbir özel muamele görmez: state zaten tip ayrımı yapmadan tüm araçları saydığından (`ground_truth_provider.get_state()`), emergency araçlar otomatik olarak normal kuyruk üyesi gibi işlenir — ekstra kod dalı gerekmez.
-- **Açlık koruması (opsiyonel, değeri versiyona göre değişir):** `params.emergency_starvation_override_limit` verilmişse, emergency önceliği vermeden önce `other_direction_severely_starving()` başka bir yönün zaten kritik derecede aç olup olmadığını kontrol eder — kendi kuyruğuna sıkışıp yavaş ilerleyen bir emergency aracın her karar turunda aynı yönü kazanıp diğer tüm yönleri sınırsız aç bırakmasını engeller (`mixed_master_scenario` ile bulunup v1'de düzeltilen hata). v1'de bu değer 60s; v2'de 90s'ye gevşetildi — bir parametre taramasıyla bulundu: standart (kısa) senaryolarda hiç tetiklenmediği, ama `mixed_master_scenario` gibi çok uzun/sürekli senaryolarda normal trafiği v1 seviyesinde tuttuğu için seçildi. Parametre hiç verilmezse bu koruma tamamen devre dışı kalır (koşulsuz öncelik) — v2 ilk denemede bu şekilde test edildi ve `mixed_master_scenario`'da ciddi bir normal-trafik regresyonuna yol açtığı ölçüldü, bu yüzden nihai v2 koşulsuz değil, 90s limitli.
+```
+yeşil = kalkış süresi + araç sayısı / boşalma hızı   (+ doygunluk payı)
+```
 
-### v3 pratikte ne yapıyor
+Sonuç en kısa ve en uzun yeşil arasına sıkıştırılır. Varsayılanlar: kalkış süresi 2 sn, boşalma hızı 1 araç/sn, doygunluk payı 3 sn, en kısa yeşil 5 sn, en uzun yeşil 30 sn, sarı 3 sn. Doygunluk payı yalnızca `is_saturated` doğruyken eklenir.
 
-Yukarıdaki formüller doğru ama pratikteki davranışı olduğundan daha "adaptif" gösterebilir, o yüzden ölçülen davranış burada açıkça yazılıdır:
+Süresi biten yeşil, başka hiçbir yönde araç yokken sarıya geçmeden sürdürülür.
 
-- **Yeşil süresi neredeyse sabit.** 2+ yön aktifken süre `multi_direction_max_green` (6 sn) tavanına takılır. Ölçülen kararların yaklaşık %90-99'unda yeşil 5-8 sn aralığında, ortalaması 6,2 sn civarında. Yani v3 yeşil süresini trafiğe göre anlamlı biçimde uzatıp kısaltmıyor.
-- **Kazancın kaynağı sıralama.** Fark iki şeyden geliyor: aracı olmayan yöne yeşil vermemek ve yönleri kuyruğa göre sıralamak. Trafik yönlere eşit dağıldığında bu ikisinin sağladığı avantaj küçülür ve v3, 6 sn'lik sabit süreli kontrole yakın davranır (bkz. `docs/ground_truth_final_state_and_gaps.md` Bölüm 2).
-- **v1 ve v2 aynı karar mantığı.** İkisi yalnızca acil durum parametrelerinde ayrışır.
+## Acil durum aracı
 
-### Acil durum önceliğinin kapsamı
+- Öncelik: acil durum aracı görülen yön sıradaki yeşili alır. Birden çok yönde varsa dur çizgisine en yakın olan seçilir. Yeşil süresi aracın tahmini varış süresi kadardır: uzaklık / hız + önündeki araç başına 1 sn + 2 sn pay.
+- Kesme: başka bir yönde acil durum aracı görülürse yanan yeşil, en kısa yeşil süresi dolduktan sonra kesilir.
+- Uzatma: yeşil yanan yöndeki acil durum aracı kalan sürede geçemeyecekse yeşil uzatılır. Toplam uzatma 20 sn ile sınırlıdır.
+- Açlık koruması: başka bir yön 90 sn'den uzun süredir kırmızıysa öncelik verilmez. Kuyruğa sıkışmış bir acil durum aracının diğer yönleri sınırsız bekletmesi böyle önlenir.
 
-- **Öncelik, araç durduktan sonra başlar.** Kırmızıda bekleyen acil durum aracı için faz değiştirilir. Yaklaşmakta olan ama henüz durmamış araç için önceden yeşil hazırlanmaz.
-- **Yeşil uzatması (hold):** yeşil yanan yönde acil durum aracı varsa ve kalan uzatma bütçesi içinde geçebilecekse yeşil o kadar uzatılır. Geçemeyecekse uzatılmaz. Bu dal 2026-10 öncesinde hiç çalışmıyordu: arama yalnızca kırmızıda bekleyen araçları buluyordu, yeşildeki araç bulunamadığı için `emergency_hold_count` yayınlanan tüm sonuçlarda 0'dı.
+## Kontrolcü ile iş bölümü
 
-`optimal_ground_truth`, `ground_truth` provider'ının tam bilgi avantajını (kesin konum/hız) doğrudan kullandığı için **tasarım gereği** `yolo` ile uyumlu değildir — bu bir eksiklik değil, "ground_truth = tam bilgiyle ulaşılabilecek tavan" rolünün doğal sonucu.
+`controllers/adaptive_controller.py` zamanlamayı yürütür: yeşil, sarı, birer saniyelik adımlar. Kuralın verdiği kararı değiştirmez. Her yeşilde kural bir de açıklama metni döndürür, panelde "Son karar" olarak gösterilen metin budur.
 
-## `adaptive_optimal_ground_truth_v2` ve `multi_direction_max_green` clamp'i neden gevşetilmedi
+Parametreler `core/config_defaults.py` içindeki `ADAPTIVE_PARAMS` sözlüğündedir ve `data/controller_versions.json` dosyasına oradan yazılır.
 
-v2 üzerinde yapılan bir inceleme, batch verisinde `choose_next_phase`'in normal-trafik kararlarının **%95.7'sinde** `green_time`'ın `queue_count/discharge_rate` formülü yerine `multi_direction_max_green` clamp'inin kendisi tarafından belirlendiğini gösterdi (2+ aktif yön olduğunda). İlk hipotez, bu clamp'in formülü bastırdığı ve gevşetilmesinin (6 → 10/15/20) sonucu iyileştireceğiydi.
+## Kararların denetimi
 
-**Ölçüm bu hipotezi çürüttü.** `multi_direction_max_green` için 4/5/6/10/15/20 aday değerleriyle 6 temsili senaryoda (`balanced_traffic`, `right_heavy_traffic`, `single_direction_traffic`, `asymmetric_peak_traffic`, `emergency_peak_traffic`, `mixed_master_scenario`) yapılan tarama, **mevcut değer olan 6'nın test edilen tüm değerler arasında en iyi (veya en iyiye çok yakın) sonucu verdiğini** gösterdi — hem ortalama bekleme hem de p95/p99/max_wait tail-latency metriklerinde. Neden: `multi_direction_max_green`'i yükseltmek, bir yönün tek bir fazda çok daha uzun yeşil almasına izin verir; ama cycle-fairness her aktif yönü yine de bir turda bir kez servis ettiği için, bu tek yönün uzayan fazı **tüm turun** (cycle length) uzamasına yol açar — bu da her yönün kendi sırasını bekleme süresini artırır (klasik "kısa cycle length ortalama gecikmeyi düşürür" etkisi). `queue_count/discharge_rate` formülü kendi başına "bu yönü temizlemek için ne kadar gerekli" sorusuna doğru cevap veriyor olsa da, DİĞER yönlerin o sürede sıfır servis aldığı gerçeğini görmezden geliyor — clamp, bu sistem-seviyesi maliyeti fiilen fiyatlandıran (kaba ama etkili) bir düzeltme.
+`tools/verify_decisions.py` her yeşili sonradan olanla karşılaştırır: verilen sürede kaç araç geçti, yeşil son araçtan sonra boşa yandı mı, seçilen yön en kalabalık ya da en uzun bekleyen yön müydü. Aynı senaryolar sabit süreli kontrolle de koşturulur.
 
-Sonuç: `multi_direction_max_green=6` değişmedi (v1 ile aynı). Bu, "kademeli iyileştirme, ölç, sonra devam et" yaklaşımının somut bir çıktısı — bir varsayım test edildi ve yanlış çıktı, kod gereksiz yere karmaşıklaştırılmadı.
+Son ölçüm (her senaryoda bir koşu, birden çok yönde araç varken verilen yeşiller):
 
-## `yolo` provider için strateji: `camera_queue`
+| Senaryo | Boşa yanan yeşil: sabit | Boşa yanan yeşil: adaptif | Kısa kalan yeşil: adaptif |
+|---|---:|---:|---:|
+| `low_traffic` | %42 | %25 | %2 |
+| `balanced_traffic` | %24 | %17 | %0 |
+| `right_heavy_traffic` | %27 | %24 | %3 |
+| `peak_traffic` | %0 | %4 | %0 |
+| `emergency_balanced_traffic` | %24 | %32 | %0 |
 
-`controllers/strategies/camera_queue_strategy.py` (`adaptive_camera_queue_v1`), v3'ün karar kuralını yalnızca kameradan gelen gözlemle uygular. Amaç aynı kuralı iki farklı girdiyle çalıştırıp aradaki farkı algılamanın maliyeti olarak ölçmektir.
+Az ve orta yoğunlukta adaptif kontrol boşa yanan yeşili azaltıyor. Doygun trafikte her yönde kuyruk olduğu için iki kontrolcüde de yeşil neredeyse hiç boşa yanmıyor. Acil durum araçlı senaryoda oran adaptif kontrolde daha yüksek. Muhtemel nedeni, acil durum aracı için verilen ya da uzatılan yeşilin süresinin kuyruğa göre değil aracın varışına göre hesaplanması.
 
-**Girdi.** `YoloStateProvider.get_observation()` her yön için şunu verir: `queue_count` (duran araç), `visible_count`, `is_saturated` (duran bir araç kare kenarına 70 pikselden yakınsa, kuyruk büyük olasılıkla kare dışında sürüyor) ve `emergency` (tespit edilen acil durum aracının türü, dur çizgisine uzaklığı, önündeki araç sayısı). Strateji bunun dışında yalnızca kontrolcünün saatini kullanır.
+## Bilinen sınırlar
 
-**v3'ten farkları.**
-
-- Bekleme süresi araçlardan okunmaz. Her yön için "son yeşilinden bu yana geçen süre" tutulur, açlık koruması bununla çalışır.
-- Boşalma hızı ölçülmez, sabit bir değer varsayılır (`assumed_discharge_rate`, 0,5 araç/sn).
-- Acil durum aracının varış süresi kutunun dur çizgisine uzaklığından ve önündeki araç sayısından tahmin edilir (`emergency_speed_px_per_s`, `seconds_per_vehicle_ahead`).
-- Strateji durumu sınıf örneğinde tutulur, motorun içine yazılmaz.
-
-**Bilinen sınırlar.**
-
-- Kuyruk karede görünenle sınırlıdır. Uzun kuyrukta sayı tavana vurur. `saturated_green_bonus` bu durumda yeşili uzatmak için eklendi, varsayılanı 0 ve ölçülen sonuçlarda kapalı.
-- Kare dışında bekleyen acil durum aracı görülmez. Öncelik, araç kareye girdiğinde başlar.
-- Bir araç ancak iki ardışık gözlemde yer değiştirmediğinde kuyruk sayılır. Bu, kuyruğa yeni katılan aracı bir saniye geç saydırır.
-
-Sonuçlar: `reports/camera/summary.md`.
+- Gözlem karede görünenle sınırlıdır. Kare dışına taşan kuyruk sayılamaz, doygunluk payı bunu kabaca telafi eder.
+- Kare dışında bekleyen acil durum aracı görülmez. Öncelik araç kareye girdiğinde başlar.
+- Boşalma hızı ölçülmez, sabit kabul edilir.
+- Parametreler tek bir karşılaştırmayla seçildi, senaryo başına ayar yapılmadı.
