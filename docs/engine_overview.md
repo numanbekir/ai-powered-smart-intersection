@@ -1,69 +1,69 @@
-# Simülasyon Motoru (`simulation/engine.py`, `simulation/vehicle.py`)
+# Simulation Engine (`simulation/engine.py`, `simulation/vehicle.py`)
 
-`SimulationEngine` araç doğuşunu, hareketi, sinyal fazlarını, metrik toplamayı ve çizimi yürütür. Pencereli ve penceresiz (headless) çalışma aynı kodu kullanır.
+`SimulationEngine` handles spawning, vehicle motion, signal phases, metric collection and drawing. Windowed and headless runs use the same code.
 
-## Çalışma zamanı: iki iş parçacığı, tek saat
+## Runtime: two threads, one clock
 
-Ana döngünün yanında iki iş parçacığı çalışır:
+Two threads run next to the main loop:
 
-- Kontrolcü (`controller.run`): sinyal fazlarını seçer ve uygular.
-- Araç üretici (`generateVehicles`): yeni araçları rastgele yön, tür ve dönüş niyetiyle üretir.
+- Controller (`controller.run`): picks and runs the signal phases.
+- Spawner (`generateVehicles`): creates vehicles with a random approach, type and turn.
 
-Zaman duvar saatiyle değil tek bir sayaçla (`simulation_elapsed`) ilerler. Her adımda sayaç `oynatma hızı / fps` kadar artar. `scaled_sleep()` gerçek zamanda uyumaz, sayacın hedefe ulaşmasını bekler. Böylece oynatma hızı ne olursa olsun aynı senaryo ve tohum aynı sonucu verir.
+Time is not wall-clock time but a single counter, `simulation_elapsed`. Each tick advances it by `playback speed / fps`. `scaled_sleep()` does not sleep in real time, it waits for the counter to reach the target. Whatever the playback speed, the same scenario and seed give the same result.
 
-Ana döngü, iki iş parçacığı o adımdaki işini bitirip yeniden beklemeye geçmeden sonraki adıma ilerlemez (`wait_for_workers()`). İşlemci yükü altında da sonuç değişmez.
+The main loop does not move on to the next tick until both threads have finished their work for the current one and are waiting again (`wait_for_workers()`). This keeps results stable under CPU load as well.
 
-## Determinizm
+## Determinism
 
-Senaryo, kontrolcü, gözlem kaynağı ve tohum sabitken sonuç birebir aynıdır. `tools/verify_determinism.py` bunu art arda iki koşuyla ve yapay işlemci yükü altında denetler. Motorda, kontrolcüde ya da karar kuralında yapılan her değişiklikten sonra çalıştırılır.
+With scenario, controller, state provider and seed fixed, the result is identical. `tools/verify_determinism.py` checks this with two back-to-back runs and again under artificial CPU load. It should be run after any change to the engine, the controllers or the decision rule.
 
-## Hareket modeli
+## Motion model
 
-Araçlar ivmelenir, fren yapar ve öndeki aracı izler. Değerler piksel ve simülasyon saniyesi cinsindendir:
+Vehicles accelerate, brake and follow the vehicle ahead. Values are in pixels and simulated seconds:
 
-| Değer | Anlamı |
+| Value | Meaning |
 |---|---|
-| `acceleration` = 25 | hızlanma |
-| `comfortBraking` = 40 | olağan fren |
-| `hardBraking` = 90 | ışık değiştiği anda duruş kararında kullanılan sert fren |
-| `timeHeadway` = 0,7 | öndeki araçla bırakılan zaman aralığı |
-| `startGap` = 5 | duran aracın kalkması için önünde açılması gereken boşluk |
-| `stoppingGap` = 25 | duran araçlar arasındaki mesafe |
-| `turnSpeedFactor` = 0,7 | dönüşteki hız oranı |
+| `acceleration` = 25 | acceleration |
+| `comfortBraking` = 40 | normal braking |
+| `hardBraking` = 90 | hard braking, used for the stop/go decision when the light changes |
+| `timeHeadway` = 0.7 | time gap kept to the vehicle ahead |
+| `startGap` = 5 | gap that must open ahead of a standing vehicle before it moves off |
+| `stoppingGap` = 25 | distance between standing vehicles |
+| `turnSpeedFactor` = 0.7 | speed ratio while turning |
 
-Kurallar:
+Rules:
 
-- Takip: hız, öndeki boşluğun izin verdiği değeri aşmaz. Duran bir aracın arkasında yavaşlama fren eğrisiyle yapılır, uzun süre sürünerek yaklaşma olmaz.
-- Kalkış: duran araç önünde `startGap` kadar boşluk açılmadan kalkmaz. Kuyruk tek blok hâlinde değil, sırayla çözülür.
-- Dur çizgisi: ışık yeşil değilken araç çizgide durur. Işık değiştiği anda duramayacak kadar yakın olan araç geçer.
-- Kavşak içi: ışık yeşil olsa da başka yönden gelen bir araç kavşak içindeyken çizgide beklenir.
-- Dönüş: dönen araç aynı sabit yolu daha düşük hızla izler ve çıkış yolundaki araçları takip eder.
+- Following: speed never exceeds what the gap ahead allows. Behind a standing vehicle the slowdown follows a braking curve instead of a long creep.
+- Starting: a standing vehicle does not move until a `startGap` has opened ahead of it, so a queue discharges one vehicle after another rather than as a block.
+- Stop line: a vehicle stops at the line unless the light is green. A vehicle too close to stop when the light changes goes through.
+- Inside the intersection: even on green, a vehicle waits at the line while a vehicle from another approach is still inside.
+- Turning: a turning vehicle follows a fixed path at lower speed and then follows the traffic on its exit road.
 
-Ölçülen doygun kapasite yön başına 1,00 araç/sn'dir (iki şerit, şerit başına 2 sn'de bir araç). `tools/measure_current_capacity.py` ile ölçülür. `tools/verify_vehicle_motion.py` dört kuralı denetler: hız sıçrama yapmadan değişir, öndeki araç kalkınca arkadaki 1,5 sn içinde kalkar, önü boş olan araç durmaz, duran araçlar üst üste binmez.
+Measured saturation capacity is 1.00 veh/s per approach (two lanes, one vehicle every 2 s per lane), measured with `tools/measure_current_capacity.py`. `tools/verify_vehicle_motion.py` checks four rules: speed changes without jumps, a vehicle starts within 1.5 s after the one ahead pulls away, a vehicle with a free road ahead never stands still, and standing vehicles never overlap.
 
-Kapasitenin gerçek kavşak kayıtlarıyla ilişkisi için `docs/scenario_capacity_calibration.md`.
+For how this capacity compares with real intersections, see `docs/scenario_capacity_calibration.md`.
 
-## Doğuş noktası
+## Spawn point
 
-Araç, şeridin sabit doğuş noktasında ya da şeridin son aracı henüz oradan ayrılmadıysa onun arkasında doğar (`Vehicle.place_at_spawn()`).
+A vehicle appears at the fixed spawn point of its lane, or behind the last vehicle of that lane if it has not moved away from the spawn point yet (`Vehicle.place_at_spawn()`).
 
-## Simülasyon penceresi ayrı süreçte çalışır
+## The simulation window runs in its own process
 
-Arayüz Tkinter, simülasyon penceresi pygame kullanır. İkisi aynı süreçte çalıştığında simülasyondan sonra açılan bir arayüz penceresi uygulamayı çökertiyordu. Simülasyon bu yüzden ayrı bir süreçte çalıştırılır (`simulation/runner.py`), sonuç ana sürece bir boru üzerinden döner.
+The UI uses Tkinter, the simulation window uses pygame. Running both in one process made the app crash when a UI window was opened after a simulation. The simulation therefore runs in a separate process (`simulation/runner.py`) and sends its result back through a pipe. The UI language is passed to that process as well.
 
-## Sağ panel
+## Side panel
 
-`simulation/panel.py` pencerenin sağındaki paneli çizer: yön tablosu (ışık, araç sayısı, bekleme, geçen araç), son karar, koşu özeti ve son yeşiller. Kameralı kontrolde tabloda kameranın saydığı araç sayısı gösterilir, kesin sayıdan ayrıldığında fark ayrıca yazılır.
+`simulation/panel.py` draws the panel on the right: a table of the approaches (signal, vehicle count, wait, crossed), the last decision, run totals and the recent greens. With the camera controller the table shows the camera's count, and when it differs from the exact count the actual number is shown under it.
 
-## Metrik toplama
+## Metric collection
 
-Bekleme süresi, araç sinyal yüzünden dururken her adımda simülasyon saniyesi cinsinden birikir, oynatma hızından bağımsızdır. Tanımlar `docs/metrics_definitions.md` dosyasındadır.
+Wait time accumulates in simulated seconds on every tick while a vehicle is held by the signal, independent of playback speed. Definitions are in `docs/metrics_definitions.md`.
 
-## Bilinen sınırlar
+## Known limitations
 
-- Tek kavşak modellenir. Koridor ya da ağ eşgüdümü denenemez.
-- Yaya fazı yoktur. 5 sn'lik en kısa yeşil gerçek bir kent kavşağına göre iyimserdir.
-- Aynı anda tek yön yeşil alır. Karşılıklı iki yönün birlikte geçtiği faz düzeni modellenmez.
-- Üst üste binme denetimi dönüşün ortasındaki araçları kapsamaz.
-- Kavşağı geçen araçlar bellekten silinmez. Çok uzun koşularda bellek kullanımı artar.
-- Kuyruk uzunluğu adım başına ağırlıksız örneklenir. Farklı oynatma hızlarında alınan mutlak değerler birbiriyle karşılaştırılmaz.
+- Only one intersection is modeled. Corridor or network coordination cannot be tested.
+- There is no pedestrian phase. A 5 s minimum green is optimistic for a real urban intersection.
+- Only one approach is green at a time. Phase plans where two opposite approaches go together are not modeled.
+- The overlap check does not cover vehicles in the middle of a turn.
+- Vehicles that have crossed are not removed from memory, so memory use grows on very long runs.
+- Queue length is sampled once per tick, unweighted. Absolute values taken at different playback speeds are not comparable.

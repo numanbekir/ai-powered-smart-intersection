@@ -1,37 +1,37 @@
-# AI-Powered Smart Intersection: Proje Özeti
+# AI-Powered Smart Intersection: Project Overview
 
-## Amaç
+## Goal
 
-Tek bir kavşakta üç kontrol biçimi aynı senaryolarda karşılaştırılır:
+Three ways of running the lights at a single intersection are compared on the same scenarios:
 
-1. Sabit süre: her yön sırayla aynı süre yeşil alır.
-2. Adaptif, tam bilgi: karar kuralı kamera karesindeki araçların kesin sayısıyla çalışır.
-3. Adaptif, kamera: aynı karar kuralı yalnızca YOLO11n tespitleriyle çalışır.
+1. Fixed time: every approach gets the same green in turn.
+2. Adaptive, ground truth: the decision rule works with the exact number of vehicles in the camera frame.
+3. Adaptive, camera: the same decision rule works only with YOLO11n detections.
 
-İkinci ve üçüncü arasındaki fark, kavşağı kamerayla algılamanın kontrol kalitesine maliyetidir.
+The gap between 2 and 3 is what it costs to see the intersection through a camera.
 
-## Mimari
+## Architecture
 
 ```
-Arayüz (Tkinter)  →  Kontrolcü  →  Gözlem kaynağı  →  Simülasyon motoru  →  Kayıt (JSON)
+UI (Tkinter)  →  Controller  →  State provider  →  Simulation engine  →  Storage (JSON)
 ```
 
-- Arayüz (`ui/`): simülasyon başlatma, senaryo seçimi ve düzenleme, kontrolcü seçimi.
-- Kontrolcü (`controllers/`): `fixed_time_controller.py` ya da `adaptive_controller.py`. Adaptif kontrolcü zamanlamayı yürütür, kararı `strategies/demand_strategy.py` verir. Bkz. `docs/strategy_structure.md`.
-- Gözlem kaynağı (`state_providers/`): `ground_truth_provider.py` kesin sayıyı, `yolo_provider.py` kamera karesindeki tespitleri verir. İkisi aynı görüş alanını kullanır.
-- Simülasyon motoru (`simulation/`): araç doğuşu, hareket, sinyal fazları, metrikler, panel. Bkz. `docs/engine_overview.md`.
-- Kayıt (`core/`, `data/*.json`): senaryolar, kontrolcü tanımları ve koşu sonuçları.
+- UI (`ui/`): start a simulation, pick or edit a scenario, pick a controller.
+- Controller (`controllers/`): `fixed_time_controller.py` or `adaptive_controller.py`. The adaptive controller handles the timing, `strategies/demand_strategy.py` makes the decisions. See `docs/strategy_structure.md`.
+- State provider (`state_providers/`): `ground_truth_provider.py` gives the exact count, `yolo_provider.py` the detections on the camera frame. Both use the same field of view.
+- Simulation engine (`simulation/`): spawning, vehicle motion, signal phases, metrics, side panel. See `docs/engine_overview.md`.
+- Storage (`core/`, `data/*.json`): scenarios, controller definitions and run results.
 
-## Senaryolar ve deney düzeni
+## Scenarios and experiment setup
 
-`data/scenarios.json` içinde 22 senaryo vardır: dengeli, yön ağırlıklı, yoğun, seyrek, yoğunluğu koşu içinde değişen ve acil durum araçlı türler, ayrıca hepsini art arda çalıştıran 30 dakikalık `mixed_master_scenario`. Yoğunlukların nasıl ayarlandığı `docs/scenario_capacity_calibration.md` dosyasındadır.
+`data/scenarios.json` holds 22 scenarios: balanced, direction-heavy, peak, sparse, demand that changes during the run, scenarios with emergency vehicles, and the 30-minute `mixed_master_scenario` that plays all of them back to back. How the demand levels were set is in `docs/scenario_capacity_calibration.md`.
 
-Her koşu senaryo, kontrolcü ve tohum üçlüsüyle tanımlanır ve bu üçlü sabitken sonuç birebir aynıdır. Sonuç tabloları `tools/baseline_sweep.py` ile üretilir: senaryo başına 10 tohum, 10 dakikalık koşular, ilk 2 dakika ısınma. Sabit süre altı farklı yeşil süresiyle taranır ve adaptif kontrol her senaryonun en iyi sabit süresiyle karşılaştırılır.
+A run is defined by scenario, controller and seed, and with those fixed the result is identical every time. The result tables come from `tools/baseline_sweep.py`: 10 seeds per scenario, 10-minute runs, the first 2 minutes as warmup. Fixed time is swept over six green durations and the adaptive controllers are compared with the best one for each scenario.
 
-## Belgeler
+## Documents
 
-- `docs/engine_overview.md`: motorun işleyişi, hareket modeli, determinizm.
-- `docs/strategy_structure.md`: karar kuralı ve parametreleri.
-- `docs/metrics_definitions.md`: metrik tanımları.
-- `docs/scenario_capacity_calibration.md`: kapasite ölçümü, senaryo yoğunlukları, gerçek kayıtlarla ilişki.
-- `docs/results_and_limits.md`: sonuç tabloları ve modelin kapsamadığı şeyler.
+- `docs/engine_overview.md`: how the engine works, motion model, determinism.
+- `docs/strategy_structure.md`: the decision rule and its parameters.
+- `docs/metrics_definitions.md`: metric definitions.
+- `docs/scenario_capacity_calibration.md`: capacity measurement, scenario demand levels, comparison with real recordings.
+- `docs/results_and_limits.md`: full result tables and what the model does not cover.

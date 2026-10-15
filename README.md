@@ -1,158 +1,108 @@
 # AI-Powered Smart Intersection
 
-Tek kavşaklı bir trafik ışığı simülasyonu. Işıkları üç farklı yöntemle
-yönetip aynı trafik altında karşılaştırıyor:
+[Türkçe](README.tr.md)
 
-1. Sabit süreli kontrol: her yön sırayla aynı süre yeşil alır.
-2. Adaptif kontrol, tam bilgi: karar kuralı kamera karesindeki araçların
-   gerçek sayısını hatasız bilir.
-3. Adaptif kontrol, kamera: aynı karar kuralı yalnızca YOLO11n modelinin
-   üstten kamera karesinde bulduğu araçlarla çalışır.
+A traffic signal simulation of a single intersection that compares three ways of running the lights under the same traffic:
 
-İkinci ile üçüncü arasındaki fark, kavşağı kamerayla görmenin kontrole
-maliyeti. Birinci ile ikinci arasındaki fark ise kararın kendisinin ne
-kazandırdığı.
+1. Fixed time: every approach gets the same green in turn.
+2. Adaptive, ground truth: the decision rule knows the exact number of vehicles in the camera frame.
+3. Adaptive, camera: the same decision rule works only with what a YOLO11n model detects on the overhead camera frame.
 
-![Kamera karesinde araç tespiti ve acil durum aracına verilen öncelik](docs/demo.gif)
+The gap between 2 and 3 is what it costs to see the intersection through a camera. The gap between 1 and 2 is what the decision rule itself brings.
 
-## Sonuçlar
+![Vehicle detection on the camera frame and priority for an emergency vehicle](docs/demo.gif)
 
-22 senaryo, senaryo başına 10 tohum, 10 dakikalık koşular. İlk 2 dakika
-ısınma olarak ölçüme alınmadı. Sabit süreli kontrol 6, 8, 10, 12, 15 ve 20
-saniyelik yeşillerle ayrı ayrı koşuldu ve adaptif kontrol her senaryoda
-bunların en iyisiyle karşılaştırıldı. Bekleme süresine, koşu bittiğinde
-hâlâ kuyrukta olan araçlar da dahil.
+## Results
 
-| Trafik türü | Kameralı kontrolün en iyi sabit süreye göre kazancı |
+22 scenarios, 10 seeds each, 10-minute runs with the first 2 minutes left out as warmup. Fixed time was run with 6, 8, 10, 12, 15 and 20 s greens, and adaptive control is compared with the best of these for each scenario. Wait time includes vehicles still queued when the run ended.
+
+| Traffic | Camera controller vs. best fixed time |
 |---|---|
-| Tek yönlü, aşırı yönlü | %70-100 |
-| Seyrek trafik, boş kavşak | %70-71 |
-| Yön ağırlıklı, dönüş çakışmalı | %55-62 |
-| Asimetrik yoğun saat | %28 |
-| 30 dakikalık karma senaryo | %55 |
-| Dengeli trafik türleri | %7-16 |
-| Doygun yoğun saat | %1 ile -%8 arası |
+| Single direction, extreme directional | 70-100% less wait |
+| Sparse, idle intersection | 70-71% less wait |
+| Direction-heavy, turning conflict | 55-62% less wait |
+| Asymmetric peak | 28% less wait |
+| 30-minute mixed scenario | 55% less wait |
+| Balanced traffic | 7-16% less wait |
+| Saturated peak | between 1% less and 8% more |
 
-22 senaryonun 21'inde kameralı kontrol ortalamada sabit sürenin önünde.
-Kazanç, trafiğin yönlere dengesiz dağıldığı ya da seyrek olduğu yerde
-büyük: sabit süre boş yöne de yeşil yakmaya devam ediyor. Dengeli trafikte
-iyi ayarlanmış bir sabit süreyle fark küçük. Talebin kapasiteyi aştığı
-yoğun saatte ise sıralamayı değiştirmek bir şey kazandırmıyor, en uzun
-sabit yeşil (15-20 sn) adaptif kontrolle aynı ya da biraz önde.
+The camera controller beats fixed time on average in 21 of 22 scenarios. The gain is large when traffic is unbalanced or sparse, because fixed time keeps giving green to empty approaches. With balanced traffic a well-tuned fixed time is close behind. When demand exceeds capacity, reordering the greens does not help, and the longest fixed greens (15-20 s) are on par or slightly ahead.
 
-Acil durum araçları sabit sürede ortalama 18-64 sn bekliyor. Adaptif
-kontrolde bu süre senaryoya göre 0,3-23 sn arasında:
+Emergency vehicles wait 18-64 s on average with fixed time. With adaptive control it is 0.3-23 s depending on the scenario:
 
-| Senaryo | En iyi sabit | Tam bilgi | Kamera |
+| Scenario | Best fixed | Ground truth | Camera |
 |---|---:|---:|---:|
-| Dengeli trafik | 18,9 sn | 1,6 sn | 1,4 sn |
-| Sağ ağırlıklı trafik | 63,6 sn | 15,1 sn | 12,3 sn |
-| Doygun yoğun saat | 50,1 sn | 23,0 sn | 19,9 sn |
-| Seyrek trafik | 17,9 sn | 0,3 sn | 0,8 sn |
-| Karma senaryo | 54,6 sn | 7,4 sn | 8,6 sn |
+| Balanced traffic | 18.9 s | 1.6 s | 1.4 s |
+| Right-heavy traffic | 63.6 s | 15.1 s | 12.3 s |
+| Saturated peak | 50.1 s | 23.0 s | 19.9 s |
+| Sparse traffic | 17.9 s | 0.3 s | 0.8 s |
+| Mixed scenario | 54.6 s | 7.4 s | 8.6 s |
 
-Kameralı kontrol ile tam bilgili kontrol arasındaki fark senaryo başına -1,0 ile
-+1,1 sn arasında, ortancası -0,2 sn. Yani tespit hataları kararları
-pratikte değiştirmiyor.
+The difference between the camera and ground-truth controllers is between -1.0 and +1.1 s per scenario, median -0.2 s. In other words, detection errors barely change the decisions.
 
-Tablolar: `reports/baseline_sweep/summary.md` ve `reports/camera/summary.md`.
+Full tables: `reports/baseline_sweep/summary.md` and `reports/camera/summary.md`.
 
-## Kamera tarafı
+## Camera pipeline
 
-Kameralı kontrolcü simülasyonun içini okumuyor. Tek girdisi kavşağın
-900x900 piksellik üstten görüntüsü.
+The camera controller never reads the simulation state. Its only input is the 900x900 overhead image of the intersection.
 
-- Veri kümesi: kareler simülasyondan alınıyor, etiketler araçların
-  konumundan otomatik üretiliyor. 1200 eğitim ve 450 doğrulama karesi,
-  7 sınıf (otomobil, otobüs, kamyon, motosiklet, ambulans, polis, itfaiye).
-  Doğrulama kareleri eğitimde hiç kullanılmamış senaryo ve tohumlardan.
-- Model: YOLO11n, 896 piksel girdi, 40 epoch. Doğrulama kümesinde
-  mAP50-95 0,98, kesinlik 0,998, duyarlılık 0,999
-  (`reports/detector/metrics.json`).
-- Gözlem: kare her simülasyon saniyesinde bir kez modele veriliyor. Her
-  yaklaşım kolu için görünen araç sayısı, kuyruğun kare kenarına dayanıp
-  dayanmadığı ve varsa en yakın acil durum aracı çıkarılıyor.
+- Dataset: frames are captured from the simulation and labels are generated from the vehicle positions. 1200 training and 450 validation frames, 7 classes (car, bus, truck, bike, ambulance, police, fire truck). Validation frames come from scenarios and seeds never used in training.
+- Model: YOLO11n, 896 px input, 40 epochs. On the validation set: mAP50-95 0.98, precision 0.998, recall 0.999 (`reports/detector/metrics.json`).
+- Observation: the frame goes through the model once per simulated second. For each approach it yields the number of visible vehicles, whether the queue reaches the edge of the frame, and the nearest emergency vehicle if there is one.
 
-Tam bilgili kontrolcü de aynı görüş alanını kullanıyor, yalnızca saymayı
-hatasız yapıyor. İki kontrolcü arasındaki fark bu yüzden tamamen tespit
-hatasından ve bir saniyelik gözlem aralığından geliyor.
+The ground-truth controller uses the same field of view and just counts without errors. So the difference between the two comes entirely from detection errors and the one-second observation interval.
 
-### Bu sonuçların söylemediği
+### What these results don't show
 
-Görüntüler simülasyonun kendi çizimi. Araçlar hep aynı ölçekte ve aynı
-görünümde, ışık değişimi, hava, gölge ya da örtüşme yok. Model bu yüzden
-neredeyse hatasız çalışıyor ve bu doğruluk gerçek bir kamera için bir şey
-söylemiyor. Projenin gösterdiği şey veri üretiminden kontrol kararına kadar
-uzanan hattın tamamı ve bu hattın ölçülebilir olması. Gerçek görüntüyle
-aynı karşılaştırma ayrıca yapılmalı.
+The images are the simulation's own rendering. Vehicles always have the same scale and look, and there is no lighting change, weather, shadow or occlusion. That is why the model is almost perfect, and that accuracy says nothing about a real camera. What the project does show is the whole pipeline from data generation to signal decision, and a way to measure it. The same comparison still has to be done on real footage.
 
-Diğer sınırlar:
+Other limitations:
 
-- Kare dışına taşan kuyruk sayılamıyor. Kural kenara dayanan kuyruğa
-  birkaç saniye ek yeşil vererek bunu kabaca telafi ediyor.
-- Kare dışında bekleyen acil durum aracı görülmüyor, öncelik araç kareye
-  girdiğinde başlıyor.
-- Tek kavşak, yaya fazı yok, aynı anda yalnızca bir yön yeşil alıyor.
-- Simülasyondaki kapasite (yön başına 1,00 araç/sn) gerçek kavşak
-  kayıtlarında ölçülenin (0,45 araç/sn) yaklaşık iki katı. Senaryolar
-  kapasiteye oranla tanımlandığı için karşılaştırma geçerli, ama saniye
-  cinsinden süreler gerçek bir kavşağa doğrudan taşınamaz. Ayrıntı:
-  `docs/scenario_capacity_calibration.md`.
+- A queue that spills out of the frame cannot be counted. The rule adds a few seconds of green when a queue reaches the edge as a rough correction.
+- An emergency vehicle waiting outside the frame is not seen; priority starts when it enters the frame.
+- One intersection, no pedestrian phase, only one approach green at a time.
+- Capacity in the simulation (1.00 veh/s per approach) is about twice what was measured in real intersection recordings (0.45 veh/s). Scenarios are defined relative to capacity, so the comparison holds, but waits in seconds do not carry over directly to a real intersection. Details: `docs/scenario_capacity_calibration.md`.
 
-## Karar kuralı
+## Decision rule
 
-Her yeşilin sonunda kural dört yaklaşım kolunun gözlemine bakıyor:
+When a green ends, the rule looks at the observation of all four approaches:
 
-- Yön: `araç sayısı + 1,5 × (20 sn'yi aşan kırmızı süresi)` en yüksek olan
-  yön seçiliyor. Aracı olan her yön bir kez yeşil almadan hiçbir yön ikinci
-  kez yeşil almıyor.
-- Süre: `2 sn kalkış + araç sayısı / boşalma hızı`, 5 ile 30 sn arasında.
-- Acil durum aracı: aracın görüldüğü yön sıradaki yeşili alıyor, süre aracın
-  dur çizgisine varış süresine göre hesaplanıyor. Başka bir yön 90 sn'den
-  uzun süredir kırmızıysa öncelik verilmiyor.
+- Approach: the one with the highest `vehicles + 1.5 × (red time beyond 20 s)` gets the green. No approach gets a second green until every approach with vehicles has had one.
+- Duration: `2 s start-up + vehicles / discharge rate`, between 5 and 30 s.
+- Emergency vehicle: its approach gets the next green, sized to the vehicle's arrival at the stop line. No priority is given if another approach has been red for more than 90 s.
 
-`tools/verify_decisions.py` her yeşili sonradan olanla karşılaştırıyor.
-Son araç geçtikten sonra boşa yanmaya devam eden yeşillerin oranı dengeli
-trafikte sabit sürede %24, adaptif kontrolde %17. Az trafikte bu oran %42'den
-%25'e iniyor. Adaptif kontrolde yeşillerin en fazla %3'ü kısa kalıyor, yani
-o anda sayılan araçların hepsi geçemiyor.
+`tools/verify_decisions.py` checks every green against what happened afterwards. With balanced traffic, the share of greens that kept running after the last vehicle had crossed is 24% with fixed time and 17% with adaptive control. With low traffic it drops from 42% to 25%. At most 3% of adaptive greens are too short, meaning not every counted vehicle got through.
 
-Ayrıntı: `docs/strategy_structure.md`.
+Details: `docs/strategy_structure.md`.
 
-## Mimari
+## Architecture
 
-![Uygulama penceresi: kavşak ve karar paneli](docs/ekran-goruntusu.png)
+![Application window: intersection and decision panel](docs/screenshot.png)
 
 ```
-Arayüz (Tkinter)  →  Kontrolcü  →  Gözlem kaynağı  →  Simülasyon motoru (pygame)  →  Kayıt (JSON)
+UI (Tkinter)  →  Controller  →  State provider  →  Simulation engine (pygame)  →  Storage (JSON)
 ```
 
-- `ui/`: simülasyon başlatma, senaryo seçimi ve düzenleme, kontrolcü seçimi.
-- `controllers/`: sabit süreli kontrolcü ve adaptif kontrolcü. Adaptif
-  kontrolcü zamanlamayı yürütüyor, kararı `strategies/demand_strategy.py`
-  veriyor.
-- `state_providers/`: `ground_truth_provider.py` hatasız sayımı,
-  `yolo_provider.py` kamera tespitlerini veriyor.
-- `simulation/`: araç üretimi, hareket modeli, sinyal fazları, metrikler ve
-  sağdaki karar paneli.
-- `core/`, `data/`: senaryolar, kontrolcü tanımları ve koşu sonuçları.
+- `ui/`: start a simulation, pick or edit a scenario, pick a controller. English and Turkish.
+- `controllers/`: fixed-time and adaptive controllers. The adaptive controller handles the timing, `strategies/demand_strategy.py` makes the decisions.
+- `state_providers/`: `ground_truth_provider.py` gives exact counts, `yolo_provider.py` gives camera detections.
+- `simulation/`: spawning, motion model, signal phases, metrics and the decision panel on the right.
+- `core/`, `data/`: scenarios, controller definitions and run results.
 
-Simülasyon deterministik: senaryo, kontrolcü ve tohum aynıyken sonuç
-birebir aynı, işlemci yükü altında da. `tools/verify_determinism.py` bunu
-denetliyor.
+The simulation is deterministic: with the same scenario, controller and seed the result is identical, even under CPU load. `tools/verify_determinism.py` checks this.
 
-## Kurulum ve çalıştırma
+## Setup
 
-Python 3.10 veya üstü gerekiyor.
+Python 3.10 or newer.
 
 ```bash
 pip install -r requirements.txt          # pygame, matplotlib
-pip install -r requirements-yolo.txt     # kameralı kontrol için: ultralytics
+pip install -r requirements-yolo.txt     # camera controller: ultralytics
 
 python main.py
 ```
 
-Sonuç tablolarını yeniden üretmek için:
+To regenerate the result tables:
 
 ```bash
 python tools/baseline_sweep.py
@@ -163,31 +113,28 @@ python tools/baseline_sweep.py --greens --adaptive adaptive_camera \
 python tools/camera_comparison_report.py
 ```
 
-Eğitilmiş model `weights/vehicle_detector.pt` olarak repoda. Modeli baştan
-üretmek için:
+The trained model is included as `weights/vehicle_detector.pt`. To build it from scratch:
 
 ```bash
 python tools/generate_detection_dataset.py
 python tools/train_detector.py
 ```
 
-Doğrulama betikleri:
+Checks:
 
 ```bash
-python tools/verify_determinism.py     # aynı tohum, aynı sonuç
-python tools/verify_vehicle_motion.py  # hareket modeli kuralları
-python tools/verify_decisions.py       # yeşillerin sonradan denetimi
+python tools/verify_determinism.py     # same seed, same result
+python tools/verify_vehicle_motion.py  # motion model rules
+python tools/verify_decisions.py       # audit of every green
 ```
 
-## Belgeler
+## Documentation
 
-`docs/` altında, Türkçe:
+In `docs/`:
 
-- `01_project_overview.md`: amaç, mimari, deney düzeni.
-- `engine_overview.md`: simülasyon motoru, hareket modeli, determinizm.
-- `strategy_structure.md`: karar kuralı ve parametreleri.
-- `metrics_definitions.md`: metrik tanımları.
-- `scenario_capacity_calibration.md`: kapasite, senaryo yoğunlukları,
-  gerçek kayıtlarla ilişki.
-- `results_and_limits.md`: tam sonuç tabloları ve modelin kapsamadığı
-  şeyler.
+- `01_project_overview.md`: goal, architecture, experiment setup.
+- `engine_overview.md`: simulation engine, motion model, determinism.
+- `strategy_structure.md`: the decision rule and its parameters.
+- `metrics_definitions.md`: metric definitions.
+- `scenario_capacity_calibration.md`: capacity, scenario demand levels, comparison with real recordings.
+- `results_and_limits.md`: full result tables and what the model does not cover.
