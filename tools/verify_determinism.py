@@ -90,11 +90,11 @@ def main():
     controller_registry = ControllerVersionRegistry()
 
     base_scenario = scenario_registry.get_by_id("peak_traffic")
-    controller_version = controller_registry.get("adaptive_optimal_ground_truth")
+    controller_version = controller_registry.get("adaptive_ground_truth")
     seed = 42
 
     print("=" * 70)
-    print("DETERMINISM CHECK: peak_traffic / adaptive_optimal_ground_truth / seed=42")
+    print("DETERMINISM CHECK: peak_traffic / adaptive_ground_truth / seed=42")
     print("=" * 70)
 
     print("\n[1] Same seed, no artificial load, run twice:")

@@ -59,27 +59,7 @@ TEST_MATRIX = [
     {
         "mode": "adaptive",
         "provider_id": "ground_truth_v1",
-        "controller_version_id": "adaptive_optimal_ground_truth",
-    },
-    {
-        "mode": "adaptive",
-        "provider_id": "ground_truth_v1",
-        "controller_version_id": "adaptive_optimal_ground_truth_v2",
-    },
-    {
-        "mode": "adaptive",
-        "provider_id": "ground_truth_v1",
-        "controller_version_id": "adaptive_optimal_ground_truth_v3",
-    },
-    {
-        "mode": "adaptive",
-        "provider_id": "ground_truth_v1",
-        "controller_version_id": "adaptive_rolling_horizon_ground_truth",
-    },
-    {
-        "mode": "adaptive",
-        "provider_id": "ground_truth_v1",
-        "controller_version_id": "adaptive_rolling_horizon_ground_truth_v2",
+        "controller_version_id": "adaptive_ground_truth",
     },
 ]
 

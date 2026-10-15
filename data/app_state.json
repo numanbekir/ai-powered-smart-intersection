@@ -1,9 +1,8 @@
 {
-  "selected_scenario_id": "right_heavy_traffic",
-  "selected_controller_version_id": "adaptive_optimal_ground_truth_v3",
+  "selected_scenario_id": "balanced_traffic",
+  "selected_controller_version_id": "adaptive_ground_truth",
   "selected_state_provider_id": "ground_truth_v1",
   "emergency_priority_enabled": true,
   "cycle_fairness_enabled": true,
-  "repeat_guard_enabled": false,
   "language": "tr"
 }

@@ -1,3 +1,4 @@
+import math
 import pygame
 
 
@@ -58,7 +59,14 @@ class Vehicle(pygame.sprite.Sprite):
         self.waitTime = 0.0
 
         self.waitingDueToSignalQueue = False
-        self._departure_start = None
+        # px per simulated second
+        self.max_speed = self.base_speed * engine.fps
+        self.velocity = self.max_speed
+        self._committed_to_cross = False
+        self._had_green = False
+        self._in_junction = False
+        self._exit_heading = None
+        self._exit_index = None
 
         self.crossedLogged = False
         self.emergencyWaitLogged = False
@@ -71,10 +79,9 @@ class Vehicle(pygame.sprite.Sprite):
         # Once araci fully hazirla (image dahil), ANCAK BUNDAN SONRA
         # paylasilan engine.vehicles listesine ekle. Spawner thread'i ile
         # controller thread'i esitzamanli calistigi icin, self.image
-        # set edilmeden once listeye eklenirse controller (ozellikle
-        # optimal_ground_truth_strategy'nin emergency ETA hesabi gibi
-        # vehicle.image'a dogrudan erisen kod) tam o pencerede araca
-        # bakip AttributeError ile cokebiliyordu.
+        # set edilmeden once listeye eklenirse controller (vehicle.image'a
+        # dogrudan erisen kod) tam o pencerede araca bakip AttributeError
+        # ile cokebiliyordu.
         self.originalImage = self.load_vehicle_image(vehicleClass, direction)
         self.image = self.originalImage.copy()
 
@@ -133,6 +140,12 @@ class Vehicle(pygame.sprite.Sprite):
             elif self.direction == "up":
                 self.y = max(self.y, prev.y + prev_rect.height + gap)
 
+        leader = self.leader_before_turn()
+        if leader is not None:
+            # Enter at the speed the gap to the vehicle ahead allows.
+            free_gap = max(0.0, self.gap_to(leader, self.HEADING[self.direction]) - engine.stoppingGap)
+            self.velocity = min(self.max_speed, free_gap / engine.timeHeadway)
+
         self.spawnDistance = self.distance_to_stop_line()
 
     def distance_to_stop_line(self):
@@ -157,31 +170,6 @@ class Vehicle(pygame.sprite.Sprite):
         angle = self.ROTATION_MAP.get(direction, 0)
         return pygame.transform.rotate(base_image, angle)
 
-    def current_speed(self):
-        return self.base_speed * self.engine.playback_speed
-
-    def departure_speed(self, full_speed):
-        """Ramped speed for the first startupLostTime seconds after THIS
-        vehicle personally starts departing from a stop -- tied to this
-        vehicle's own first-movement tick, not to the signal phase's start
-        time. A vehicle already moving must never be re-slowed just because
-        the same direction's green phase happens to restart/repeat while it
-        is still crossed==0 (e.g. re-selected shortly after by the
-        controller) -- only a vehicle that was actually stationary gets a
-        fresh departure ramp, once, the first tick it's allowed to move."""
-        if self._departure_start is None:
-            self._departure_start = self.engine.simulation_elapsed
-
-        elapsed = self.engine.simulation_elapsed - self._departure_start
-
-        if elapsed >= self.engine.startupLostTime:
-            return full_speed
-
-        return full_speed * max(0.15, elapsed / self.engine.startupLostTime)
-
-    def turn_step_ratio(self):
-        ratio = self.engine.playback_speed
-        return max(1.0, min(ratio, 3.0))
 
     def update_signal_wait_time(self, old_x, old_y):
         self.waitingDueToSignalQueue = False
@@ -199,23 +187,23 @@ class Vehicle(pygame.sprite.Sprite):
         if self.controller.is_green(direction_no):
             return
 
-        tolerance = max(2.0, self.current_speed() + 1.0)
+        tolerance = 3.0
 
         if self.direction == "right":
             waiting_at_own_stop = (
-                self.x + self.image.get_rect().width >= self.stop - tolerance
+                self.x + self.image.get_rect().width >= self.engine.defaultStop[self.direction] - tolerance
             )
 
         elif self.direction == "down":
             waiting_at_own_stop = (
-                self.y + self.image.get_rect().height >= self.stop - tolerance
+                self.y + self.image.get_rect().height >= self.engine.defaultStop[self.direction] - tolerance
             )
 
         elif self.direction == "left":
-            waiting_at_own_stop = self.x <= self.stop + tolerance
+            waiting_at_own_stop = self.x <= self.engine.defaultStop[self.direction] + tolerance
 
         elif self.direction == "up":
-            waiting_at_own_stop = self.y <= self.stop + tolerance
+            waiting_at_own_stop = self.y <= self.engine.defaultStop[self.direction] + tolerance
 
         else:
             waiting_at_own_stop = False
@@ -267,47 +255,6 @@ class Vehicle(pygame.sprite.Sprite):
 
         screen.blit(text, text_rect)
 
-    def _trigger_reached(self, side):
-        trigger = self.engine.turnTriggerPoints[self.direction][side]
-
-        if self.direction == "right":
-            return self.x + self.image.get_rect().width >= trigger
-        if self.direction == "down":
-            return self.y + self.image.get_rect().height >= trigger
-        if self.direction == "left":
-            return self.x <= trigger
-        if self.direction == "up":
-            return self.y <= trigger
-
-        return False
-
-    def clamped_step_to_trigger(self, side, speed):
-        # Bir tick'te tam `speed` kadar ilerlemek, yüksek playback_speed'de
-        # tetik noktasını büyük ölçüde aşmaya (overshoot) yol açar --
-        # apply_turn()'ün dx/dy ofsetleri sabit olduğundan, farklı bir
-        # başlangıç pozisyonundan başlayan dönüş farklı bir final pozisyonda
-        # biter (playback_speed'e bağlı "kayma"). Adımı, tetik noktasını
-        # aşmayacak şekilde sınırlayarak dönüşün her zaman aynı pozisyondan
-        # başlamasını garanti ediyoruz.
-        trigger = self.engine.turnTriggerPoints[self.direction][side]
-        width = self.image.get_rect().width
-        height = self.image.get_rect().height
-
-        if self.direction == "right":
-            remaining = trigger - (self.x + width)
-        elif self.direction == "down":
-            remaining = trigger - (self.y + height)
-        elif self.direction == "left":
-            remaining = self.x - trigger
-        elif self.direction == "up":
-            remaining = self.y - trigger
-        else:
-            return speed
-
-        if remaining <= 0:
-            return speed
-
-        return min(speed, remaining)
 
     def move_by(self, dx, dy):
         self.x += dx
@@ -325,28 +272,6 @@ class Vehicle(pygame.sprite.Sprite):
 
         return vehicles[self.index - 1]
 
-    def previous_vehicle_allows_forward(self):
-        prev = self.previous_vehicle()
-
-        if prev is None:
-            return True
-
-        if prev.turned == 1:
-            return True
-
-        if self.direction == "right":
-            return self.x + self.image.get_rect().width < prev.x - self.engine.movingGap
-
-        if self.direction == "down":
-            return self.y + self.image.get_rect().height < prev.y - self.engine.movingGap
-
-        if self.direction == "left":
-            return self.x > prev.x + prev.image.get_rect().width + self.engine.movingGap
-
-        if self.direction == "up":
-            return self.y > prev.y + prev.image.get_rect().height + self.engine.movingGap
-
-        return True
 
     def log_crossing_if_needed(self):
         engine = self.engine
@@ -370,77 +295,6 @@ class Vehicle(pygame.sprite.Sprite):
                 engine.vehiclesNotTurned[self.direction][self.lane].append(self)
                 self.crossedIndex = len(engine.vehiclesNotTurned[self.direction][self.lane]) - 1
 
-    def can_continue_after_crossing_straight(self):
-        engine = self.engine
-
-        if self.crossedIndex == 0:
-            return True
-
-        prev = engine.vehiclesNotTurned[self.direction][self.lane][self.crossedIndex - 1]
-
-        if self.direction == "right":
-            return self.x + self.image.get_rect().width < prev.x - engine.movingGap
-
-        if self.direction == "down":
-            return self.y + self.image.get_rect().height < prev.y - engine.movingGap
-
-        if self.direction == "left":
-            return self.x > prev.x + prev.image.get_rect().width + engine.movingGap
-
-        if self.direction == "up":
-            return self.y > prev.y + prev.image.get_rect().height + engine.movingGap
-
-        return True
-
-    def can_continue_after_turn(self, axis, sign):
-        engine = self.engine
-
-        if self.crossedIndex == 0:
-            return True
-
-        prev = engine.vehiclesTurned[self.direction][self.lane][self.crossedIndex - 1]
-
-        if axis == "x" and sign > 0:
-            return self.x + self.image.get_rect().width < prev.x - engine.movingGap
-
-        if axis == "x" and sign < 0:
-            return self.x > prev.x + prev.image.get_rect().width + engine.movingGap
-
-        if axis == "y" and sign > 0:
-            return self.y + self.image.get_rect().height < prev.y - engine.movingGap
-
-        if axis == "y" and sign < 0:
-            return self.y > prev.y + prev.image.get_rect().height + engine.movingGap
-
-        return True
-
-    def apply_turn(self, dx_base, dy_base, clockwise=True):
-        engine = self.engine
-        step_ratio = self.turn_step_ratio()
-        angle_step = min(engine.rotationAngle * step_ratio, 90 - self.rotateAngle)
-
-        if angle_step <= 0:
-            return False
-
-        move_ratio = angle_step / engine.rotationAngle
-        dx = dx_base * move_ratio
-        dy = dy_base * move_ratio
-
-        self.rotateAngle += angle_step
-
-        if clockwise:
-            self.image = pygame.transform.rotate(self.originalImage, self.rotateAngle)
-        else:
-            self.image = pygame.transform.rotate(self.originalImage, -self.rotateAngle)
-
-        self.x += dx
-        self.y += dy
-
-        if self.rotateAngle >= 90:
-            self.rotateAngle = 90
-            self.turned = 1
-
-        return True
 
     def log_vehicle_metrics_if_crossed(self):
         if self.crossed == 0:
@@ -484,225 +338,268 @@ class Vehicle(pygame.sprite.Sprite):
         free_flow = (self.spawnDistance or 0.0) / (self.base_speed * self.engine.fps)
         return max(0.0, self.engine.simulation_elapsed - self.spawnTime - free_flow)
 
+    # Heading of each approach: (axis, sign).
+    HEADING = {"right": ("x", 1), "down": ("y", 1), "left": ("x", -1), "up": ("y", -1)}
+
+    # Turn geometry per (approach, turn): the position offset of one 3-degree
+    # rotation step, the rotation sense and the heading after the turn.
+    TURNS = {
+        ("right", "left"): (2.4, -2.8, True, ("y", -1)),
+        ("right", "right"): (2.0, 1.8, False, ("y", 1)),
+        ("down", "left"): (1.2, 1.8, True, ("x", 1)),
+        ("down", "right"): (-2.5, 2.0, False, ("x", -1)),
+        ("left", "left"): (-1.0, 1.2, True, ("y", 1)),
+        ("left", "right"): (-1.8, -2.5, False, ("y", -1)),
+        ("up", "left"): (-2.0, -1.2, True, ("x", -1)),
+        ("up", "right"): (1.0, -1.0, False, ("x", 1)),
+    }
+
+    def front(self, heading):
+        """Coordinate of the leading edge along `heading`."""
+        axis, sign = heading
+        rect = self.image.get_rect()
+        if axis == "x":
+            return self.x + rect.width if sign > 0 else self.x
+        return self.y + rect.height if sign > 0 else self.y
+
+    def rear(self, heading):
+        axis, sign = heading
+        rect = self.image.get_rect()
+        if axis == "x":
+            return self.x if sign > 0 else self.x + rect.width
+        return self.y if sign > 0 else self.y + rect.height
+
+    def distance_ahead(self, heading, coordinate):
+        """Distance from the leading edge to `coordinate`, positive ahead."""
+        return heading[1] * (coordinate - self.front(heading))
+
+    def gap_to(self, leader, heading):
+        return heading[1] * (leader.rear(heading) - self.front(heading))
+
+    def leader_before_turn(self):
+        prev = self.previous_vehicle()
+        if prev is None or prev.turned == 1:
+            return None
+        return prev
+
+    # How many of the vehicles that entered an exit road before this one
+    # are checked when looking for the one to follow.
+    EXIT_LOOKBACK = 8
+
+    def join_exit_road(self, heading):
+        """Register on the road this vehicle leaves the intersection by.
+        Vehicles from different approaches meet there."""
+        road = self.engine.exitRoads[heading]
+        road.append(self)
+        self._exit_heading = heading
+        self._exit_index = len(road) - 1
+
+    def leader_on_exit_road(self):
+        """Nearest vehicle ahead in the same lane of the exit road."""
+        heading = self._exit_heading
+        road = self.engine.exitRoads[heading]
+        start = max(0, self._exit_index - self.EXIT_LOOKBACK)
+        lateral = "y" if heading[0] == "x" else "x"
+        own_low = getattr(self, lateral)
+        rect = self.image.get_rect()
+        own_high = own_low + (rect.height if lateral == "y" else rect.width)
+
+        leader, leader_gap = None, None
+        for vehicle in road[start:self._exit_index]:
+            other_rect = vehicle.image.get_rect()
+            low = getattr(vehicle, lateral)
+            high = low + (other_rect.height if lateral == "y" else other_rect.width)
+            if high <= own_low or low >= own_high:
+                continue
+            gap = self.gap_to(vehicle, heading)
+            if gap < -other_rect.width - other_rect.height:
+                continue
+            if leader_gap is None or gap < leader_gap:
+                leader, leader_gap = vehicle, gap
+        return leader
+
+    def update_junction_presence(self):
+        """Keep the engine's list of vehicles inside the junction box."""
+        inside = self.engine.junctionVehicles
+        if self.crossed == 0:
+            return
+        rect = self.image.get_rect()
+        in_box = self.engine.junctionBox.colliderect(
+            pygame.Rect(int(self.x), int(self.y), rect.width, rect.height)
+        )
+        if in_box and not self._in_junction:
+            self._in_junction = True
+            inside.append(self)
+        elif not in_box and self._in_junction:
+            self._in_junction = False
+            inside.remove(self)
+
+    def junction_blocked(self):
+        """True while a vehicle from another approach is still inside the
+        junction."""
+        return any(vehicle.direction != self.direction for vehicle in self.engine.junctionVehicles)
+
+    def must_stop_at_line(self, heading):
+        """True while the vehicle has to hold at the stop line: the signal
+        is not green, or it is green but cross traffic is still inside the
+        junction. A vehicle too close to stop at the moment the light turns
+        drives through."""
+        if self.crossed == 1:
+            return False
+
+        green = self.controller.is_green(self.direction_number)
+        light_just_changed = self._had_green and not green
+        self._had_green = green
+
+        if green:
+            self._committed_to_cross = False
+            return self.junction_blocked()
+
+        if light_just_changed:
+            distance = self.distance_ahead(heading, self.engine.defaultStop[self.direction])
+            braking_distance = self.velocity ** 2 / (2 * self.engine.hardBraking)
+            self._committed_to_cross = self.velocity > 0 and distance < braking_distance
+
+        if self._committed_to_cross and self.velocity == 0:
+            # Held up after all (queue ahead): the commitment is void.
+            self._committed_to_cross = False
+
+        return not self._committed_to_cross
+
+    def advance(self, heading, leader, stop_distance=None, slow_to=None):
+        """Move one tick along `heading`.
+
+        Speed follows three limits: acceleration towards the vehicle's own
+        top speed, a time gap behind the leader, and a braking curve towards
+        a stop point. The step never closes the standing gap to the leader
+        and never passes the stop point. `slow_to` is a (speed, distance)
+        pair: the speed to be down to at a point ahead, used before a turn.
+        """
+        engine = self.engine
+        dt = engine.current_simulation_delta
+        target = min(self.max_speed, self.velocity + engine.acceleration * dt)
+        room = None
+
+        if leader is not None:
+            free_gap = max(0.0, self.gap_to(leader, heading) - engine.stoppingGap)
+            # The time gap alone closes the last metres ever more slowly, so
+            # behind a standing leader the braking curve takes over. The
+            # curve fades out as the leader picks up speed, which keeps a
+            # queue from starting as one block.
+            follow_speed = max(
+                free_gap / engine.timeHeadway,
+                math.sqrt(2 * engine.comfortBraking * free_gap) - 2 * leader.velocity,
+            )
+            if self.velocity == 0 and free_gap < engine.startGap:
+                # A standing vehicle waits until the leader has pulled away
+                # a little, so a queue starts one vehicle after another.
+                follow_speed = 0.0
+            target = min(target, follow_speed)
+            room = free_gap
+
+        if stop_distance is not None:
+            stop_distance = max(0.0, stop_distance)
+            target = min(target, math.sqrt(2 * engine.comfortBraking * stop_distance))
+            room = stop_distance if room is None else min(room, stop_distance)
+
+        if slow_to is not None:
+            # Reach `slow_to[0]` px/s by the point `slow_to[1]` px ahead.
+            limit_speed, limit_distance = slow_to
+            target = min(
+                target,
+                math.sqrt(limit_speed ** 2 + 2 * engine.comfortBraking * max(0.0, limit_distance)),
+            )
+
+        # Never brake harder than the hard limit, unless the room ahead
+        # leaves no choice.
+        target = max(target, self.velocity - engine.hardBraking * dt)
+
+        step = target * dt
+        if room is not None:
+            step = min(step, room)
+            if room < 0.05:
+                # Close enough: come to rest instead of creeping forever.
+                step = 0.0
+                target = 0.0
+
+        self.velocity = min(target, step / dt) if room is not None and dt > 0 else target
+        if slow_to is not None:
+            step = min(step, max(0.0, slow_to[1]))
+
+        axis, sign = heading
+        if axis == "x":
+            self.x += sign * step
+        else:
+            self.y += sign * step
+
+    def advance_turn(self, dx_base, dy_base, clockwise):
+        """Rotate through the turn at the vehicle's own speed. The path is
+        the same at every playback speed: the position offset is tied to the
+        rotation angle."""
+        engine = self.engine
+        dt = engine.current_simulation_delta
+        self.velocity = min(
+            self.max_speed * engine.turnSpeedFactor,
+            self.velocity + engine.acceleration * dt,
+        )
+
+        steps = self.velocity * dt / math.hypot(dx_base, dy_base)
+        angle_step = min(engine.rotationAngle * steps, 90 - self.rotateAngle)
+        move_ratio = angle_step / engine.rotationAngle
+
+        self.rotateAngle += angle_step
+        angle = self.rotateAngle if clockwise else -self.rotateAngle
+        self.image = pygame.transform.rotate(self.originalImage, angle)
+        self.x += dx_base * move_ratio
+        self.y += dy_base * move_ratio
+
+        if self.rotateAngle >= 90:
+            self.rotateAngle = 90
+            self.turned = 1
+            turned = self.engine.vehiclesTurned[self.direction][self.lane]
+            turned.append(self)
+            self.crossedIndex = len(turned) - 1
+            self.join_exit_road(self.TURNS[(self.direction, self.turnIntent)][3])
+
     def move(self):
         if not self._placed:
             self.place_at_spawn()
 
         old_x, old_y = self.x, self.y
         engine = self.engine
-        speed = self.current_speed()
+        heading = self.HEADING[self.direction]
 
-        # Isik durumu (render/karar icin) aninda degisir; ama az once
-        # kirmizidan kurtulan bir arac gercekte aninda tam hiza gecmez --
-        # self.departure_speed() bu reaksiyon/ivmelenme gecikmesini
-        # modelliyor (bkz. docs/scenario_capacity_calibration.md, gercek
-        # kayitlardan olculen ~3s start-up lost time). Sadece DURAKLAMIS/
-        # kuyruktaki bir aracin KENDI ilk kalkis anina gore uygulanir --
-        # serbest yaklasan, zaten gecmis, ya da halihazirda hareket halindeki
-        # araclar (faz yeniden baslasa/uzasa bile) speed ile hareket etmeye
-        # devam eder.
-        green_right = self.controller.is_green(0)
-        green_down = self.controller.is_green(1)
-        green_left = self.controller.is_green(2)
-        green_up = self.controller.is_green(3)
-
+        was_crossed = self.crossed
         self.log_crossing_if_needed()
+        if self.crossed == 1 and was_crossed == 0 and self.turnIntent == "straight":
+            self.join_exit_road(heading)
 
-        if self.direction == "right":
-            if self.turnIntent == "left":
-                if self.crossed == 0 or not self._trigger_reached("left"):
-                    at_stop = self.crossed == 0 and self.x + self.image.get_rect().width > self.stop
-                    if (
-                        (self.x + self.image.get_rect().width <= self.stop or green_right or self.crossed == 1)
-                        and self.previous_vehicle_allows_forward()
-                    ):
-                        step_speed = self.departure_speed(speed) if at_stop else speed
-                        self.move_by(self.clamped_step_to_trigger("left", step_speed), 0)
-                else:
-                    if self.turned == 0:
-                        turned_now = self.apply_turn(2.4, -2.8, True)
-                        if turned_now and self.turned == 1:
-                            engine.vehiclesTurned[self.direction][self.lane].append(self)
-                            self.crossedIndex = len(engine.vehiclesTurned[self.direction][self.lane]) - 1
-                    elif self.can_continue_after_turn("y", -1):
-                        self.move_by(0, -speed)
-
-            elif self.turnIntent == "right":
-                if self.crossed == 0 or not self._trigger_reached("right"):
-                    at_stop = self.crossed == 0 and self.x + self.image.get_rect().width > self.stop
-                    if (
-                        (self.x + self.image.get_rect().width <= self.stop or green_right or self.crossed == 1)
-                        and self.previous_vehicle_allows_forward()
-                    ):
-                        step_speed = self.departure_speed(speed) if at_stop else speed
-                        self.move_by(self.clamped_step_to_trigger("right", step_speed), 0)
-                else:
-                    if self.turned == 0:
-                        turned_now = self.apply_turn(2.0, 1.8, False)
-                        if turned_now and self.turned == 1:
-                            engine.vehiclesTurned[self.direction][self.lane].append(self)
-                            self.crossedIndex = len(engine.vehiclesTurned[self.direction][self.lane]) - 1
-                    elif self.can_continue_after_turn("y", 1):
-                        self.move_by(0, speed)
-
+        if self.turnIntent == "straight":
+            if self.crossed == 0:
+                stop_distance = None
+                if self.must_stop_at_line(heading):
+                    stop_distance = self.distance_ahead(heading, engine.defaultStop[self.direction])
+                self.advance(heading, self.leader_before_turn(), stop_distance)
             else:
-                if self.crossed == 0:
-                    at_stop = self.x + self.image.get_rect().width > self.stop
-                    if (
-                        (self.x + self.image.get_rect().width <= self.stop or green_right)
-                        and self.previous_vehicle_allows_forward()
-                    ):
-                        step_speed = self.departure_speed(speed) if at_stop else speed
-                        self.move_by(step_speed, 0)
-                elif self.can_continue_after_crossing_straight():
-                    self.move_by(speed, 0)
+                self.advance(heading, self.leader_on_exit_road())
 
-        elif self.direction == "down":
-            if self.turnIntent == "left":
-                if self.crossed == 0 or not self._trigger_reached("left"):
-                    at_stop = self.crossed == 0 and self.y + self.image.get_rect().height > self.stop
-                    if (
-                        (self.y + self.image.get_rect().height <= self.stop or green_down or self.crossed == 1)
-                        and self.previous_vehicle_allows_forward()
-                    ):
-                        step_speed = self.departure_speed(speed) if at_stop else speed
-                        self.move_by(0, self.clamped_step_to_trigger("left", step_speed))
-                else:
-                    if self.turned == 0:
-                        turned_now = self.apply_turn(1.2, 1.8, True)
-                        if turned_now and self.turned == 1:
-                            engine.vehiclesTurned[self.direction][self.lane].append(self)
-                            self.crossedIndex = len(engine.vehiclesTurned[self.direction][self.lane]) - 1
-                    elif self.can_continue_after_turn("x", 1):
-                        self.move_by(speed, 0)
+        elif self.turned == 1:
+            self.advance(self._exit_heading, self.leader_on_exit_road())
 
-            elif self.turnIntent == "right":
-                if self.crossed == 0 or not self._trigger_reached("right"):
-                    at_stop = self.crossed == 0 and self.y + self.image.get_rect().height > self.stop
-                    if (
-                        (self.y + self.image.get_rect().height <= self.stop or green_down or self.crossed == 1)
-                        and self.previous_vehicle_allows_forward()
-                    ):
-                        step_speed = self.departure_speed(speed) if at_stop else speed
-                        self.move_by(0, self.clamped_step_to_trigger("right", step_speed))
-                else:
-                    if self.turned == 0:
-                        turned_now = self.apply_turn(-2.5, 2.0, False)
-                        if turned_now and self.turned == 1:
-                            engine.vehiclesTurned[self.direction][self.lane].append(self)
-                            self.crossedIndex = len(engine.vehiclesTurned[self.direction][self.lane]) - 1
-                    elif self.can_continue_after_turn("x", -1):
-                        self.move_by(-speed, 0)
+        else:
+            trigger = engine.turnTriggerPoints[self.direction][self.turnIntent]
+            to_trigger = self.distance_ahead(heading, trigger)
 
+            if self.rotateAngle == 0 and to_trigger > 0:
+                stop_distance = None
+                if self.must_stop_at_line(heading):
+                    stop_distance = self.distance_ahead(heading, engine.defaultStop[self.direction])
+                turn_speed = self.max_speed * engine.turnSpeedFactor
+                self.advance(heading, self.leader_before_turn(), stop_distance, slow_to=(turn_speed, to_trigger))
             else:
-                if self.crossed == 0:
-                    at_stop = self.y + self.image.get_rect().height > self.stop
-                    if (
-                        (self.y + self.image.get_rect().height <= self.stop or green_down)
-                        and self.previous_vehicle_allows_forward()
-                    ):
-                        step_speed = self.departure_speed(speed) if at_stop else speed
-                        self.move_by(0, step_speed)
-                elif self.can_continue_after_crossing_straight():
-                    self.move_by(0, speed)
+                dx_base, dy_base, clockwise, _exit_heading = self.TURNS[(self.direction, self.turnIntent)]
+                self.advance_turn(dx_base, dy_base, clockwise)
 
-        elif self.direction == "left":
-            if self.turnIntent == "left":
-                if self.crossed == 0 or not self._trigger_reached("left"):
-                    at_stop = self.crossed == 0 and self.x < self.stop
-                    if (
-                        (self.x >= self.stop or green_left or self.crossed == 1)
-                        and self.previous_vehicle_allows_forward()
-                    ):
-                        step_speed = self.departure_speed(speed) if at_stop else speed
-                        self.move_by(-self.clamped_step_to_trigger("left", step_speed), 0)
-                else:
-                    if self.turned == 0:
-                        turned_now = self.apply_turn(-1.0, 1.2, True)
-                        if turned_now and self.turned == 1:
-                            engine.vehiclesTurned[self.direction][self.lane].append(self)
-                            self.crossedIndex = len(engine.vehiclesTurned[self.direction][self.lane]) - 1
-                    elif self.can_continue_after_turn("y", 1):
-                        self.move_by(0, speed)
-
-            elif self.turnIntent == "right":
-                if self.crossed == 0 or not self._trigger_reached("right"):
-                    at_stop = self.crossed == 0 and self.x < self.stop
-                    if (
-                        (self.x >= self.stop or green_left or self.crossed == 1)
-                        and self.previous_vehicle_allows_forward()
-                    ):
-                        step_speed = self.departure_speed(speed) if at_stop else speed
-                        self.move_by(-self.clamped_step_to_trigger("right", step_speed), 0)
-                else:
-                    if self.turned == 0:
-                        turned_now = self.apply_turn(-1.8, -2.5, False)
-                        if turned_now and self.turned == 1:
-                            engine.vehiclesTurned[self.direction][self.lane].append(self)
-                            self.crossedIndex = len(engine.vehiclesTurned[self.direction][self.lane]) - 1
-                    elif self.can_continue_after_turn("y", -1):
-                        self.move_by(0, -speed)
-
-            else:
-                if self.crossed == 0:
-                    at_stop = self.x < self.stop
-                    if (
-                        (self.x >= self.stop or green_left)
-                        and self.previous_vehicle_allows_forward()
-                    ):
-                        step_speed = self.departure_speed(speed) if at_stop else speed
-                        self.move_by(-step_speed, 0)
-                elif self.can_continue_after_crossing_straight():
-                    self.move_by(-speed, 0)
-
-        elif self.direction == "up":
-            if self.turnIntent == "left":
-                if self.crossed == 0 or not self._trigger_reached("left"):
-                    at_stop = self.crossed == 0 and self.y < self.stop
-                    if (
-                        (self.y >= self.stop or green_up or self.crossed == 1)
-                        and self.previous_vehicle_allows_forward()
-                    ):
-                        step_speed = self.departure_speed(speed) if at_stop else speed
-                        self.move_by(0, -self.clamped_step_to_trigger("left", step_speed))
-                else:
-                    if self.turned == 0:
-                        turned_now = self.apply_turn(-2.0, -1.2, True)
-                        if turned_now and self.turned == 1:
-                            engine.vehiclesTurned[self.direction][self.lane].append(self)
-                            self.crossedIndex = len(engine.vehiclesTurned[self.direction][self.lane]) - 1
-                    elif self.can_continue_after_turn("x", -1):
-                        self.move_by(-speed, 0)
-
-            elif self.turnIntent == "right":
-                if self.crossed == 0 or not self._trigger_reached("right"):
-                    at_stop = self.crossed == 0 and self.y < self.stop
-                    if (
-                        (self.y >= self.stop or green_up or self.crossed == 1)
-                        and self.previous_vehicle_allows_forward()
-                    ):
-                        step_speed = self.departure_speed(speed) if at_stop else speed
-                        self.move_by(0, -self.clamped_step_to_trigger("right", step_speed))
-                else:
-                    if self.turned == 0:
-                        turned_now = self.apply_turn(1.0, -1.0, False)
-                        if turned_now and self.turned == 1:
-                            engine.vehiclesTurned[self.direction][self.lane].append(self)
-                            self.crossedIndex = len(engine.vehiclesTurned[self.direction][self.lane]) - 1
-                    elif self.can_continue_after_turn("x", 1):
-                        self.move_by(speed, 0)
-
-            else:
-                if self.crossed == 0:
-                    at_stop = self.y < self.stop
-                    if (
-                        (self.y >= self.stop or green_up)
-                        and self.previous_vehicle_allows_forward()
-                    ):
-                        step_speed = self.departure_speed(speed) if at_stop else speed
-                        self.move_by(0, -step_speed)
-                elif self.can_continue_after_crossing_straight():
-                    self.move_by(0, -speed)
-
+        self.update_junction_presence()
         self.update_signal_wait_time(old_x, old_y)
         self.log_vehicle_metrics_if_crossed()

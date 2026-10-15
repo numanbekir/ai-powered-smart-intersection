@@ -7,7 +7,7 @@ reports/camera/summary.md.
 
 Usage:
     python tools/baseline_sweep.py
-    python tools/baseline_sweep.py --greens --adaptive adaptive_camera_queue_v1 \\
+    python tools/baseline_sweep.py --greens --adaptive adaptive_camera \\
         --workers 8 --output reports/camera/raw_results.csv
     python tools/camera_comparison_report.py
 """
@@ -26,8 +26,8 @@ from tools.run_batch_tests import SCENARIO_IDS  # noqa: E402
 BASELINE = PROJECT_ROOT / "reports" / "baseline_sweep" / "raw_results.csv"
 CAMERA = PROJECT_ROOT / "reports" / "camera" / "raw_results.csv"
 OUTPUT = PROJECT_ROOT / "reports" / "camera" / "summary.md"
-GROUND_TRUTH = "adaptive_optimal_ground_truth_v3"
-CAMERA_CONTROLLER = "adaptive_camera_queue_v1"
+GROUND_TRUTH = "adaptive_ground_truth"
+CAMERA_CONTROLLER = "adaptive_camera"
 
 
 def load(path, runs):
@@ -48,11 +48,11 @@ def main():
     load(CAMERA, runs)
 
     lines = [
-        "| Senaryo | en iyi sabit | tam bilgi (v3) | kamera | kamera kazancı (en iyi sabit) | kameranın v3'e göre kaybı | kamera önde (koşu) | geçemeyen: v3 / kamera |",
+        "| Senaryo | en iyi sabit | tam bilgi | kamera | kamera kazancı (en iyi sabit) | kameranın tam bilgiye göre kaybı | kamera önde (koşu) | geçemeyen: tam bilgi / kamera |",
         "|---|---:|---:|---:|---:|---:|---:|---:|",
     ]
     emergency_lines = [
-        "| Senaryo | en iyi sabit | tam bilgi (v3) | kamera |",
+        "| Senaryo | en iyi sabit | tam bilgi | kamera |",
         "|---|---:|---:|---:|",
     ]
     gains, losses, ahead = [], [], 0
@@ -97,11 +97,11 @@ def main():
         "# Sabit süre, tam bilgili adaptif ve kameralı adaptif",
         "",
         "Ortalama bekleme süresi (sn), ölçüme giren tüm araçlar. Üç kontrolcü aynı senaryo ve tohumlarla koşuldu.",
-        "Kameralı kontrolcü v3 ile aynı karar kuralını kullanır, girdisi yalnızca YOLO tespitleridir.",
+        "Kameralı kontrolcü tam bilgili kontrolcüyle aynı karar kuralını kullanır, girdisi yalnızca YOLO tespitleridir.",
         "",
         f"- Kameralı kontrolün en iyi sabit süreye göre kazancı: ortanca %{median(gains):.0f}, ortalama %{mean(gains):.0f}, en düşük %{min(gains):.0f}",
         f"- Kameralı kontrolün ortalamada sabit sürenin önünde olduğu senaryo: {ahead}/{len(gains)}",
-        f"- Tam bilgiye göre kayıp (kamera eksi v3): ortanca {median(losses):+.1f} sn, en yüksek {max(losses):+.1f} sn",
+        f"- Tam bilgiye göre kayıp (kamera eksi tam bilgi): ortanca {median(losses):+.1f} sn, en yüksek {max(losses):+.1f} sn",
         "",
         *lines,
         "",

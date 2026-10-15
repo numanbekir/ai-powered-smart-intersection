@@ -27,9 +27,8 @@ from tools.run_batch_tests import SCENARIO_IDS  # noqa: E402
 DEFAULT_INPUT = PROJECT_ROOT / "reports" / "baseline_sweep" / "raw_results.csv"
 DEFAULT_GREEN = 10  # the fixed-time setting every scenario ships with
 SHORT_NAMES = {
-    "adaptive_optimal_ground_truth_v3": "v3",
-    "adaptive_rolling_horizon_ground_truth": "RH-v1",
-    "adaptive_rolling_horizon_ground_truth_v2": "RH-v2",
+    "adaptive_ground_truth": "tam bilgi",
+    "adaptive_camera": "kamera",
 }
 
 

@@ -23,7 +23,7 @@ _current_language = DEFAULT_LANGUAGE
 
 TRANSLATIONS = {
     "en": {
-        "app.title": "Traffic Simulation Control Center",
+        "app.title": "AI-Powered Smart Intersection",
         "app.language_label": "Language",
         "app.msg_config_error_title": "Config Error",
         "app.msg_no_compatible_strategy": "No strategy is compatible with the current provider "
@@ -54,10 +54,6 @@ TRANSLATIONS = {
         "home.fairness_check": "Turn fairness enabled (tur adaleti)",
         "home.fairness_hint": "When off, direction choice always follows the raw score, "
                                "without guaranteeing every active direction a turn first.",
-        "home.repeat_guard_check": "Same-direction repeat guard",
-        "home.repeat_guard_hint": "When on, a direction can't win green twice in a row while "
-                                  "another direction has demand. Off by default -- every "
-                                  "shipped strategy version was tuned with this off.",
         "home.options_available_hint": "Applies to this run only -- the saved controller "
                                         "version is unchanged.",
         "home.options_unavailable_hint": "Only available in adaptive mode with a selected strategy.",
@@ -160,7 +156,7 @@ TRANSLATIONS = {
         "editor.msg_saved_body": "Scenario saved: {name}",
     },
     "tr": {
-        "app.title": "Trafik Simülasyonu Kontrol Merkezi",
+        "app.title": "AI-Powered Smart Intersection",
         "app.language_label": "Dil",
         "app.msg_config_error_title": "Yapılandırma Hatası",
         "app.msg_no_compatible_strategy": "Şu anki provider type ('{type}') ile uyumlu strateji "
@@ -192,10 +188,6 @@ TRANSLATIONS = {
         "home.fairness_check": "Tur adaleti aktif",
         "home.fairness_hint": "Kapalıyken yön seçimi her zaman ham skora göre yapılır, "
                                "her aktif yönün önce sırasını alması garanti edilmez.",
-        "home.repeat_guard_check": "Aynı yön tekrar koruması",
-        "home.repeat_guard_hint": "Açıkken, başka bir yönün talebi varken aynı yön üst üste "
-                                  "iki kez yeşil alamaz. Varsayılan kapalı -- yayınlanan her "
-                                  "strateji versiyonu bu kapalıyken ayarlandı.",
         "home.options_available_hint": "Yalnızca bu çalıştırma için geçerli -- kayıtlı "
                                         "kontrolcü versiyonu değişmez.",
         "home.options_unavailable_hint": "Yalnızca adaptif modda ve bir strateji seçiliyken kullanılabilir.",

@@ -26,10 +26,9 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from tools.run_batch_tests import SCENARIO_IDS, seeds_for_scenario  # noqa: E402
 
-DEFAULT_GREENS = [5, 6, 8, 10, 12]
+DEFAULT_GREENS = [6, 8, 10, 12, 15, 20]
 DEFAULT_ADAPTIVE = [
-    "adaptive_optimal_ground_truth_v3",
-    "adaptive_rolling_horizon_ground_truth",
+    "adaptive_ground_truth",
 ]
 DEFAULT_SEEDS = [42, 101, 202, 303, 404, 505, 606, 707, 808, 909]
 # The scenarios ship with 120 s runs, which mostly measure the start-up

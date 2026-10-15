@@ -164,21 +164,6 @@ class HomeTab:
         self.fairness_hint_label.pack(anchor="w", pady=(0, 12))
         self._static.append((self.fairness_hint_label, "home.fairness_hint"))
 
-        self.repeat_guard_check = ttk.Checkbutton(
-            self.options,
-            text=t("home.repeat_guard_check"),
-            variable=self.app.repeat_guard_var,
-            command=lambda: self.app.on_strategy_toggle_change()
-        )
-        self.repeat_guard_check.pack(anchor="w", pady=(0, 4))
-        self._static.append((self.repeat_guard_check, "home.repeat_guard_check"))
-
-        self.repeat_guard_hint_label = ttk.Label(
-            self.options, text=t("home.repeat_guard_hint"), foreground="#888888", wraplength=280
-        )
-        self.repeat_guard_hint_label.pack(anchor="w")
-        self._static.append((self.repeat_guard_hint_label, "home.repeat_guard_hint"))
-
     def retranslate(self):
         for widget, key in self._static:
             widget.config(text=t(key))
@@ -189,7 +174,6 @@ class HomeTab:
 
         self.emergency_check.configure(state=state)
         self.fairness_check.configure(state=state)
-        self.repeat_guard_check.configure(state=state)
 
         if available:
             self.options_hint.config(text=t("home.options_available_hint"))

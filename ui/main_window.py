@@ -12,7 +12,7 @@ from core.result_registry import ResultRegistry
 from core.scenario_registry import ScenarioRegistry
 from core.state_provider_registry import StateProviderRegistry
 from core.test_naming import TestNameGenerator
-from simulation.engine import SimulationEngine
+from simulation.runner import run_simulation_window
 from ui.home_tab import HomeTab
 from ui.providers_tab import ProvidersTab
 from ui.scenarios_tab import ScenariosTab
@@ -48,15 +48,6 @@ class MainWindow:
         self.cycle_fairness_var = tk.BooleanVar(
             value=self.app_state.get("cycle_fairness_enabled", True)
         )
-        # Varsayilan False: data/controller_versions.json'daki BUTUN kayitli
-        # versiyonlar bu korumayi zaten kapali tutuyor (cycle-fairness'in
-        # strateji katmaninda saglar hale gelmesiyle gereksizlesti) -- burada
-        # varsayilani True yapmak, kullanici hic dokunmasa bile TUM
-        # versiyonlarin olculmus/tuned davranisini sessizce degistirirdi.
-        self.repeat_guard_var = tk.BooleanVar(
-            value=self.app_state.get("repeat_guard_enabled", False)
-        )
-
         self.state_providers = self.state_provider_registry.list_all()
 
         self.current_scenario = self.resolve_current_scenario()
@@ -99,7 +90,7 @@ class MainWindow:
 
     def resolve_current_controller_version(self):
         version = self.controller_registry.get(
-            self.app_state.get("selected_controller_version_id", "adaptive_v1")
+            self.app_state.get("selected_controller_version_id", "adaptive_ground_truth")
         )
 
         if version is not None:
@@ -226,7 +217,7 @@ class MainWindow:
             "selected_controller_version_id": (
                 self.current_controller_version["version_id"]
                 if self.current_controller_version
-                else "adaptive_v1"
+                else "adaptive_ground_truth"
             ),
             "selected_state_provider_id": (
                 self.current_state_provider["provider_id"]
@@ -235,7 +226,6 @@ class MainWindow:
             ),
             "emergency_priority_enabled": self.emergency_priority_var.get(),
             "cycle_fairness_enabled": self.cycle_fairness_var.get(),
-            "repeat_guard_enabled": self.repeat_guard_var.get(),
             "language": i18n.get_language(),
         }
         write_json(APP_STATE_FILE, self.app_state)
@@ -263,7 +253,6 @@ class MainWindow:
         params = version.setdefault("params", {})
         params["emergency_priority_enabled"] = self.emergency_priority_var.get()
         params["cycle_fairness_enabled"] = self.cycle_fairness_var.get()
-        params["controller_repeat_guard_enabled"] = self.repeat_guard_var.get()
         return version
 
     def set_status(self, text):
@@ -287,6 +276,11 @@ class MainWindow:
             default_provider = self.get_default_provider_for_type(provider_type)
             if default_provider:
                 self.select_state_provider(default_provider)
+
+        # Each provider type has one adaptive controller.
+        compatible = self.controller_registry.list_by_provider_type(provider_type)
+        if compatible:
+            self.current_controller_version = compatible[0]
 
         self.providers_tab.refresh()
         self.home_tab.refresh()
@@ -374,40 +368,30 @@ class MainWindow:
         self.root.withdraw()
 
         try:
-            while True:
-                engine = SimulationEngine(
-                    scenario=self.current_scenario,
-                    test_name=test_name,
-                    controller_mode=self.controller_mode_var.get(),
-                    controller_version=(
-                        self.build_effective_controller_version()
-                        if self.controller_mode_var.get() == "adaptive"
-                        else None
-                    ),
-                    state_provider_id=(
-                        self.current_state_provider["provider_id"]
-                        if self.current_state_provider
-                        else "ground_truth_v1"
-                    ),
-                )
+            outcome = run_simulation_window(
+                scenario=self.current_scenario,
+                test_name=test_name,
+                controller_mode=self.controller_mode_var.get(),
+                controller_version=(
+                    self.build_effective_controller_version()
+                    if self.controller_mode_var.get() == "adaptive"
+                    else None
+                ),
+                state_provider_id=(
+                    self.current_state_provider["provider_id"]
+                    if self.current_state_provider
+                    else "ground_truth_v1"
+                ),
+            )
+            result = outcome["result"]
 
-                outcome = engine.run()
+            if result is not None:
+                self.result_registry.add(result)
 
-                if outcome["action"] == "restart":
-                    continue
-
-                result = outcome["result"]
-
-                if result is not None:
-                    self.result_registry.add(result)
-
-                if outcome["action"] == "finished" and result is not None:
-                    self.set_status("Simulation completed")
-
-                else:
-                    self.set_status("Simulation stopped")
-
-                break
+            if outcome["action"] == "finished" and result is not None:
+                self.set_status("Simulation completed")
+            else:
+                self.set_status("Simulation stopped")
 
         except Exception as e:
             self.set_status("Simulation error")

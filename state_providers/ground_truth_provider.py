@@ -1,56 +1,102 @@
-class GroundTruthStateProvider:
-    ACTIVE_LANES = [1, 2]
+import pygame
 
-    def __init__(self, engine):
-        self.engine = engine
+from simulation.camera import FRAME_SIZE
+from state_providers.base_provider import BaseStateProvider
+
+DIRECTIONS = ["right", "down", "left", "up"]
+
+
+class GroundTruthStateProvider(BaseStateProvider):
+    """Traffic state read directly from the simulation.
+
+    Reports the same observation as the YOLO provider, for the same field
+    of view (the 900x900 frame), but without detection errors and without
+    an observation interval. It is the upper bound a camera could reach.
+    """
+
+    ACTIVE_LANES = [1, 2]
+    # A standing vehicle this close to the frame edge means the queue
+    # probably continues out of view.
+    EDGE_MARGIN = 70.0
+    # A vehicle entering the frame counts once this share of it is in view.
+    MIN_VISIBLE_SHARE = 0.3
+
+    def _vehicles_in_view(self, direction):
+        """Vehicles on the approach: mostly inside the frame and with the
+        centre before the stop line, the same area the camera assigns to
+        this approach."""
+        stop_line = self.engine.stopLines[direction]
+        frame = pygame.Rect(0, 0, FRAME_SIZE, FRAME_SIZE)
+        vehicles = []
+        for lane in self.ACTIVE_LANES:
+            for vehicle in self.engine.vehicles[direction][lane]:
+                rect = vehicle.image.get_rect(topleft=(vehicle.x, vehicle.y))
+                visible = rect.clip(frame)
+                if visible.width * visible.height < self.MIN_VISIBLE_SHARE * rect.width * rect.height:
+                    continue
+                cx, cy = rect.center
+                axis, sign = vehicle.HEADING[direction]
+                if sign * (stop_line - (cx if axis == "x" else cy)) >= 0:
+                    vehicles.append(vehicle)
+        return vehicles
+
+    def get_observation(self):
+        observation = {}
+        for direction in DIRECTIONS:
+            stop_line = self.engine.stopLines[direction]
+            vehicles = self._vehicles_in_view(direction)
+            info = {
+                "queue_count": 0,
+                "visible_count": len(vehicles),
+                "is_saturated": False,
+                "emergency": None,
+            }
+
+            distances = []
+            for vehicle in vehicles:
+                heading = vehicle.HEADING[direction]
+                distance = max(0.0, vehicle.distance_ahead(heading, stop_line))
+                distances.append(distance)
+
+                if vehicle.velocity == 0:
+                    info["queue_count"] += 1
+                    rear = vehicle.rear(heading)
+                    to_edge = rear if heading[1] > 0 else FRAME_SIZE - rear
+                    if to_edge <= self.EDGE_MARGIN:
+                        info["is_saturated"] = True
+
+                if vehicle.isEmergency and (
+                    info["emergency"] is None or distance < info["emergency"]["distance"]
+                ):
+                    info["emergency"] = {
+                        "type": vehicle.emergencyType,
+                        "distance": distance,
+                        "stopped": vehicle.velocity == 0,
+                    }
+
+            if info["emergency"] is not None:
+                # Vehicles between the emergency vehicle and the stop line.
+                info["emergency"]["vehicles_ahead"] = sum(
+                    1 for distance in distances if distance < info["emergency"]["distance"]
+                )
+            observation[direction] = info
+        return observation
 
     def get_state(self):
-        # "Kuyruk" = kavsakta GERCEKTEN bekleyen/bloke olmus arac sayisi
-        # (vehicle.waitingDueToSignalQueue), henuz kavsaga hic yaklasmamis
-        # (serbestce ilerleyen) araclar DAHIL DEGIL. Onceden burada
-        # `crossed == 0` olan HER arac sayiliyordu -- yani spawn olup henuz
-        # kesisimi gecmemis her sey, kavsaga 900px uzakta olsa bile. Bu,
-        # GUI'de gozlemlenen bir soruna yol aciyordu: bir yon
-        # spawn_interval geregi cok sayida arac biriktirdiginde (ör. uzun
-        # sureli bir tikanikliktan dolayi), bu araclarin BUYUK COGUNLUGU
-        # gorunur 900x900 alanin bile disinda (spawn noktasindan geriye
-        # dogru yigilmis) olabiliyordu -- ama "queue_count" hepsini
-        # sayiyordu, stratejiler de bu sayiyi index/cost hesaplarina
-        # dogrudan sokuyordu. Sonuc: kavsaga hic yaklasmamis onlarca hayali
-        # "talep", kavsakta GERCEKTEN bekleyen 1 araci bile ezebiliyordu.
-        # `waitingDueToSignalQueue`, Vehicle.update_signal_wait_time()
-        # tarafindan zaten dogru sekilde hesaplaniyor (kirmizida kendi
-        # durma noktasinda bekleyen VEYA onundeki bekleyen araca zincirleme
-        # bloke olan arac True olur; serbestce ilerleyen bir arac bu tick
-        # hareket ettigi icin hemen False/eski haliyle kalir) -- sadece
-        # panelin/state provider'in bunu hic okumamasi sorundu.
-        state = {"right": 0, "down": 0, "left": 0, "up": 0}
-
-        for direction in ["right", "down", "left", "up"]:
-            count = 0
-
-            for lane in self.ACTIVE_LANES:
-                for vehicle in self.engine.vehicles[direction][lane]:
-                    if vehicle.crossed == 0 and vehicle.waitingDueToSignalQueue:
-                        count += 1
-
-            state[direction] = count
-
-        return state
+        observation = self.get_observation()
+        return {direction: observation[direction]["visible_count"] for direction in DIRECTIONS}
 
     def get_rich_state(self):
-        state = self.get_state()
-        rich_state = {}
-
-        for direction, queue_count in state.items():
-            rich_state[direction] = {
-                "queue_count": queue_count,
-                "visible_count": None,
+        observation = self.get_observation()
+        return {
+            direction: {
+                "queue_count": info["queue_count"],
+                "visible_count": info["visible_count"],
                 "score": None,
                 "queue_level": None,
-                "is_saturated": False,
+                "is_saturated": info["is_saturated"],
                 "occupancy_ratio": None,
                 "color": (230, 230, 230),
             }
-
-        return rich_state
+            for direction, info in observation.items()
+        }

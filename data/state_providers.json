@@ -4,15 +4,15 @@
     "display_name": "Ground Truth Provider",
     "provider_type": "ground_truth",
     "status": "active",
-    "description": "Reads all waiting vehicles directly from the simulation state.",
-    "description_tr": "Bekleyen tüm araçları simülasyon durumundan doğrudan okur."
+    "description": "Reads the exact vehicles inside the camera frame from the simulation state.",
+    "description_tr": "Kamera karesine giren araçları simülasyon durumundan hatasız okur."
   },
   {
     "provider_id": "yolo_v1",
     "display_name": "YOLO Provider",
     "provider_type": "yolo",
     "status": "active",
-    "description": "Detects vehicles on the overhead camera frame with a YOLO model trained on simulation frames. Reports standing vehicles per approach and detected emergency vehicles. Sees only the 900x900 frame.",
-    "description_tr": "Kavşağın üstten kamera karesinde araçları, simülasyon kareleriyle eğitilmiş bir YOLO modeliyle tespit eder. Her yön için duran araçları ve tespit edilen acil durum araçlarını bildirir. Yalnızca 900x900 kareyi görür."
+    "description": "Detects vehicles on the overhead camera frame with a YOLO model trained on simulation frames. Reports the vehicles on each approach and detected emergency vehicles. Sees only the 900x900 frame.",
+    "description_tr": "Kavşağın üstten kamera karesinde araçları, simülasyon kareleriyle eğitilmiş bir YOLO modeliyle tespit eder. Her yöndeki araçları ve tespit edilen acil durum araçlarını bildirir. Yalnızca 900x900 kareyi görür."
   }
 ]

@@ -9,7 +9,7 @@
       "fps": 60,
       "simulation_time": 120,
       "playback_speed": 1.0,
-      "spawn_interval": 3.81,
+      "spawn_interval": 1.82,
       "random_seed": 42,
       "allowed_vehicle_types": {
         "car": true,
@@ -105,7 +105,7 @@
       "fps": 60,
       "simulation_time": 120,
       "playback_speed": 1.0,
-      "spawn_interval": 3.81,
+      "spawn_interval": 1.82,
       "random_seed": 42,
       "allowed_vehicle_types": {
         "car": true,
@@ -201,7 +201,7 @@
       "fps": 60,
       "simulation_time": 120,
       "playback_speed": 1.0,
-      "spawn_interval": 3.81,
+      "spawn_interval": 1.82,
       "random_seed": 42,
       "allowed_vehicle_types": {
         "car": true,
@@ -297,7 +297,7 @@
       "fps": 60,
       "simulation_time": 120,
       "playback_speed": 1.0,
-      "spawn_interval": 2.33,
+      "spawn_interval": 1.11,
       "random_seed": 42,
       "allowed_vehicle_types": {
         "car": true,
@@ -393,7 +393,7 @@
       "fps": 60,
       "simulation_time": 120,
       "playback_speed": 1.0,
-      "spawn_interval": 5.98,
+      "spawn_interval": 2.86,
       "random_seed": 42,
       "allowed_vehicle_types": {
         "car": true,
@@ -489,7 +489,7 @@
       "fps": 60,
       "simulation_time": 120,
       "playback_speed": 1.0,
-      "spawn_interval": 3.81,
+      "spawn_interval": 1.82,
       "random_seed": 42,
       "allowed_vehicle_types": {
         "car": true,
@@ -585,7 +585,7 @@
       "fps": 60,
       "simulation_time": 120,
       "playback_speed": 1.0,
-      "spawn_interval": 3.22,
+      "spawn_interval": 1.54,
       "random_seed": 42,
       "allowed_vehicle_types": {
         "car": true,
@@ -681,7 +681,7 @@
       "fps": 60,
       "simulation_time": 120,
       "playback_speed": 1.0,
-      "spawn_interval": 3.81,
+      "spawn_interval": 1.82,
       "random_seed": 42,
       "allowed_vehicle_types": {
         "car": true,
@@ -777,7 +777,7 @@
       "fps": 60,
       "simulation_time": 120,
       "playback_speed": 1.0,
-      "spawn_interval": 10.46,
+      "spawn_interval": 4.99,
       "random_seed": 42,
       "allowed_vehicle_types": {
         "car": true,
@@ -872,7 +872,7 @@
       "fps": 60,
       "simulation_time": 120,
       "playback_speed": 1.0,
-      "spawn_interval": 13.94,
+      "spawn_interval": 6.66,
       "random_seed": 42,
       "allowed_vehicle_types": {
         "car": true,
@@ -968,7 +968,7 @@
       "fps": 60,
       "simulation_time": 120,
       "playback_speed": 1.0,
-      "spawn_interval": 3.81,
+      "spawn_interval": 1.82,
       "random_seed": 42,
       "direction_density": {
         "right": 25,
@@ -1086,7 +1086,7 @@
       "fps": 60,
       "simulation_time": 120,
       "playback_speed": 1.0,
-      "spawn_interval": 3.81,
+      "spawn_interval": 1.82,
       "random_seed": 42,
       "allowed_vehicle_types": {
         "car": true,
@@ -1171,25 +1171,25 @@
         {
           "start_time": 0.0,
           "end_time": 30.0,
-          "spawn_interval": 10.46,
+          "spawn_interval": 4.99,
           "source_scenario_id": "sparse_traffic"
         },
         {
           "start_time": 30.0,
           "end_time": 60.0,
-          "spawn_interval": 2.33,
+          "spawn_interval": 1.11,
           "source_scenario_id": "peak_traffic"
         },
         {
           "start_time": 60.0,
           "end_time": 90.0,
-          "spawn_interval": 10.46,
+          "spawn_interval": 4.99,
           "source_scenario_id": "sparse_traffic"
         },
         {
           "start_time": 90.0,
           "end_time": 120.0,
-          "spawn_interval": 2.33,
+          "spawn_interval": 1.11,
           "source_scenario_id": "peak_traffic"
         }
       ]
@@ -1208,7 +1208,7 @@
       "fps": 60,
       "simulation_time": 120,
       "playback_speed": 1.0,
-      "spawn_interval": 3.22,
+      "spawn_interval": 1.54,
       "random_seed": 42,
       "direction_density": {
         "right": 25,
@@ -1336,7 +1336,7 @@
       "fps": 60,
       "simulation_time": 120,
       "playback_speed": 1.0,
-      "spawn_interval": 3.22,
+      "spawn_interval": 1.54,
       "random_seed": 42,
       "direction_density": {
         "right": 25,
@@ -1474,7 +1474,7 @@
       "fps": 60,
       "simulation_time": 120,
       "playback_speed": 1.0,
-      "spawn_interval": 2.33,
+      "spawn_interval": 1.11,
       "random_seed": 42,
       "direction_density": {
         "right": 45,
@@ -1570,7 +1570,7 @@
       "fps": 60,
       "simulation_time": 120,
       "playback_speed": 1.0,
-      "spawn_interval": 3.22,
+      "spawn_interval": 1.54,
       "random_seed": 42,
       "direction_density": {
         "right": 40,
@@ -1666,7 +1666,7 @@
       "fps": 60,
       "simulation_time": 120,
       "playback_speed": 1.0,
-      "spawn_interval": 3.81,
+      "spawn_interval": 1.82,
       "random_seed": 42,
       "allowed_vehicle_types": {
         "car": true,
@@ -1761,7 +1761,7 @@
       "fps": 60,
       "simulation_time": 120,
       "playback_speed": 1.0,
-      "spawn_interval": 3.81,
+      "spawn_interval": 1.82,
       "random_seed": 42,
       "direction_density": {
         "right": 55,
@@ -1857,7 +1857,7 @@
       "fps": 60,
       "simulation_time": 120,
       "playback_speed": 1.0,
-      "spawn_interval": 2.33,
+      "spawn_interval": 1.11,
       "random_seed": 42,
       "direction_density": {
         "right": 25,
@@ -1953,7 +1953,7 @@
       "fps": 60,
       "simulation_time": 120,
       "playback_speed": 1.0,
-      "spawn_interval": 10.46,
+      "spawn_interval": 4.99,
       "random_seed": 42,
       "direction_density": {
         "right": 40,
@@ -2049,7 +2049,7 @@
       "fps": 60,
       "simulation_time": 180,
       "playback_speed": 1.0,
-      "spawn_interval": 4.65,
+      "spawn_interval": 2.22,
       "random_seed": 42,
       "allowed_vehicle_types": {
         "car": true,
@@ -2145,7 +2145,7 @@
       "fps": 60,
       "simulation_time": 1800.0,
       "playback_speed": 1.0,
-      "spawn_interval": 3.81,
+      "spawn_interval": 1.82,
       "random_seed": 42,
       "allowed_vehicle_types": {
         "car": true,
@@ -2452,121 +2452,121 @@
         {
           "start_time": 0.0,
           "end_time": 90.0,
-          "spawn_interval": 3.81,
+          "spawn_interval": 1.82,
           "source_scenario_id": "direction_shift_traffic"
         },
         {
           "start_time": 90.0,
           "end_time": 180.0,
-          "spawn_interval": 10.46,
+          "spawn_interval": 4.99,
           "source_scenario_id": "sparse_traffic"
         },
         {
           "start_time": 180.0,
           "end_time": 270.0,
-          "spawn_interval": 2.33,
+          "spawn_interval": 1.11,
           "source_scenario_id": "peak_traffic"
         },
         {
           "start_time": 270.0,
           "end_time": 360.0,
-          "spawn_interval": 3.22,
+          "spawn_interval": 1.54,
           "source_scenario_id": "single_direction_traffic"
         },
         {
           "start_time": 360.0,
           "end_time": 450.0,
-          "spawn_interval": 5.98,
+          "spawn_interval": 2.86,
           "source_scenario_id": "low_traffic"
         },
         {
           "start_time": 450.0,
           "end_time": 540.0,
-          "spawn_interval": 2.33,
+          "spawn_interval": 1.11,
           "source_scenario_id": "asymmetric_peak_traffic"
         },
         {
           "start_time": 540.0,
           "end_time": 630.0,
-          "spawn_interval": 3.81,
+          "spawn_interval": 1.82,
           "source_scenario_id": "emergency_balanced_traffic"
         },
         {
           "start_time": 630.0,
           "end_time": 720.0,
-          "spawn_interval": 2.33,
+          "spawn_interval": 1.11,
           "source_scenario_id": "emergency_peak_traffic"
         },
         {
           "start_time": 720.0,
           "end_time": 810.0,
-          "spawn_interval": 3.81,
+          "spawn_interval": 1.82,
           "source_scenario_id": "turn_heavy_traffic"
         },
         {
           "start_time": 810.0,
           "end_time": 900.0,
-          "spawn_interval": 3.81,
+          "spawn_interval": 1.82,
           "source_scenario_id": "emergency_right_heavy_traffic"
         },
         {
           "start_time": 900.0,
           "end_time": 990.0,
-          "spawn_interval": 3.22,
+          "spawn_interval": 1.54,
           "source_scenario_id": "turning_conflict_traffic"
         },
         {
           "start_time": 990.0,
           "end_time": 1080.0,
-          "spawn_interval": 3.22,
+          "spawn_interval": 1.54,
           "source_scenario_id": "alternating_heavy_traffic"
         },
         {
           "start_time": 1080.0,
           "end_time": 1170.0,
-          "spawn_interval": 3.81,
+          "spawn_interval": 1.82,
           "source_scenario_id": "balanced_traffic"
         },
         {
           "start_time": 1170.0,
           "end_time": 1260.0,
-          "spawn_interval": 3.81,
+          "spawn_interval": 1.82,
           "source_scenario_id": "extreme_directional_traffic"
         },
         {
           "start_time": 1260.0,
           "end_time": 1350.0,
-          "spawn_interval": 10.46,
+          "spawn_interval": 4.99,
           "source_scenario_id": "emergency_sparse_traffic"
         },
         {
           "start_time": 1350.0,
           "end_time": 1440.0,
-          "spawn_interval": 3.22,
+          "spawn_interval": 1.54,
           "source_scenario_id": "burst_traffic"
         },
         {
           "start_time": 1440.0,
           "end_time": 1530.0,
-          "spawn_interval": 3.81,
+          "spawn_interval": 1.82,
           "source_scenario_id": "right_heavy_traffic"
         },
         {
           "start_time": 1530.0,
           "end_time": 1620.0,
-          "spawn_interval": 13.94,
+          "spawn_interval": 6.66,
           "source_scenario_id": "idle_intersection"
         },
         {
           "start_time": 1620.0,
           "end_time": 1710.0,
-          "spawn_interval": 4.65,
+          "spawn_interval": 2.22,
           "source_scenario_id": "emergency_low_frequency_mixed_traffic"
         },
         {
           "start_time": 1710.0,
           "end_time": 1800.0,
-          "spawn_interval": 3.81,
+          "spawn_interval": 1.82,
           "source_scenario_id": "vertical_heavy_traffic"
         }
       ]

@@ -1,4 +1,10 @@
+import threading
+import time
 from pathlib import Path
+
+import pygame
+
+import numpy as np
 
 from simulation.camera import CLASS_NAMES, FRAME_SIZE, IntersectionCamera
 from state_providers.base_provider import BaseStateProvider
@@ -12,12 +18,14 @@ class YoloStateProvider(BaseStateProvider):
     """Traffic state from YOLO detections on the overhead camera frame.
 
     Once per simulated second the camera frame is run through the detector.
-    Each detection is assigned to an approach by its position, and a vehicle
-    counts as queued when it has not moved since the previous observation.
+    Each detection is assigned to an approach by its position. Every vehicle
+    seen on an approach counts as demand, and it counts as queued when it
+    has not moved since the previous observation.
     Nothing is read from the vehicles themselves: what is outside the frame,
     or missed by the detector, is unknown to the controller.
     """
 
+    MODEL_NAME = "YOLO11n"
     OBSERVATION_INTERVAL = 1.0
     CONFIDENCE = 0.4
     IMAGE_SIZE = 896
@@ -27,6 +35,7 @@ class YoloStateProvider(BaseStateProvider):
     # A standing vehicle this close to the frame edge means the queue
     # probably continues out of view.
     EDGE_MARGIN = 70.0
+    DISPLAY_REFRESH_FRAMES = 3
 
     def __init__(self, engine):
         self.engine = engine
@@ -37,6 +46,14 @@ class YoloStateProvider(BaseStateProvider):
         self.previous_centers = {direction: [] for direction in DIRECTIONS}
         self.detections = []
         self.observation = {direction: self._empty_direction() for direction in DIRECTIONS}
+        self._display_detections = []
+        self._display_age = 0
+        # Smoothed time of one detection pass, shown on the panel.
+        self.inference_ms = 0.0
+        self._model_lock = threading.Lock()
+        self._display_thread = None
+        self._display_request = threading.Event()
+        self._display_frame = None
         engine.tick_listeners.append(self._on_tick)
 
     def _load_model(self):
@@ -54,7 +71,13 @@ class YoloStateProvider(BaseStateProvider):
             ) from error
 
         self.device = 0 if torch.cuda.is_available() else "cpu"
-        return YOLO(str(WEIGHTS_PATH))
+        model = YOLO(str(WEIGHTS_PATH))
+        # The first prediction loads the remaining torch modules. It has to
+        # happen here, before the window opens: loading them after the
+        # display is up crashes the process on X11.
+        blank = np.zeros((FRAME_SIZE, FRAME_SIZE, 3), dtype=np.uint8)
+        model.predict(blank, imgsz=self.IMAGE_SIZE, device=self.device, verbose=False)
+        return model
 
     def _build_rois(self):
         # Entry half of each road, from the frame edge up to the stop line.
@@ -103,20 +126,29 @@ class YoloStateProvider(BaseStateProvider):
             return FRAME_SIZE - x2
         return FRAME_SIZE - y2
 
-    def _detect(self):
-        frame = self.camera.frame_rgb()[:, :, ::-1]  # the detector expects BGR
-        result = self.model.predict(
-            frame,
-            imgsz=self.IMAGE_SIZE,
-            conf=self.CONFIDENCE,
-            device=self.device,
-            verbose=False,
-        )[0]
+    def _predict(self, frame_rgb):
+        frame = frame_rgb[:, :, ::-1]  # the detector expects BGR
+        with self._model_lock:
+            started = time.perf_counter()
+            result = self.model.predict(
+                frame,
+                imgsz=self.IMAGE_SIZE,
+                conf=self.CONFIDENCE,
+                device=self.device,
+                verbose=False,
+            )[0]
+            elapsed_ms = (time.perf_counter() - started) * 1000.0
+        self.inference_ms = elapsed_ms if not self.inference_ms else (
+            0.9 * self.inference_ms + 0.1 * elapsed_ms
+        )
         boxes = result.boxes
         return [
             (CLASS_NAMES[int(cls)], float(conf), tuple(float(v) for v in xyxy))
             for cls, conf, xyxy in zip(boxes.cls.tolist(), boxes.conf.tolist(), boxes.xyxy.tolist())
         ]
+
+    def _detect(self):
+        return self._predict(self.camera.frame_rgb())
 
     def _on_tick(self, engine):
         if engine.simulation_elapsed < self.next_observation_time:
@@ -173,7 +205,33 @@ class YoloStateProvider(BaseStateProvider):
 
     def get_state(self):
         observation = self.observation
-        return {direction: observation[direction]["queue_count"] for direction in DIRECTIONS}
+        # Demand is every vehicle seen on the approach, standing or still
+        # driving towards the stop line.
+        return {direction: observation[direction]["visible_count"] for direction in DIRECTIONS}
+
+    def detect_for_display(self):
+        """Detections for drawing only. They are computed on a worker
+        thread from a copy of the frame, so the window keeps its frame
+        rate. The controller keeps using the once-per-second observation."""
+        if self._display_thread is None:
+            self._display_thread = threading.Thread(target=self._display_worker, daemon=True)
+            self._display_thread.start()
+
+        if self._display_age % self.DISPLAY_REFRESH_FRAMES == 0 and not self._display_request.is_set():
+            self._display_frame = self.camera.render().copy()
+            self._display_request.set()
+        self._display_age += 1
+        return self._display_detections
+
+    def _display_worker(self):
+        while self.engine.simulationRunning:
+            if not self._display_request.wait(timeout=0.1):
+                continue
+            pixels = pygame.surfarray.array3d(self._display_frame)
+            self._display_detections = self._predict(
+                np.ascontiguousarray(pixels.transpose(1, 0, 2))
+            )
+            self._display_request.clear()
 
     def get_rich_state(self):
         observation = self.observation
