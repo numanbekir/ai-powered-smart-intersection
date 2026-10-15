@@ -410,9 +410,8 @@ class ScenarioEditorDialog:
                 }
                 for direction in DIRECTIONS
             },
-            # Butun senaryolarda ayni (bkz. Turns sekmesindeki not) --
-            # form'da duzenlenmiyor, seed config'ten (ya da varsayilandan)
-            # oldugu gibi tasiniyor.
+            # The same in every scenario (see the note on the Turns tab). Not
+            # editable in the form, carried over from the seed config or the default.
             "lane_turn_policy": self.seed_config.get(
                 "lane_turn_policy", default_scenario_config()["lane_turn_policy"]
             ),

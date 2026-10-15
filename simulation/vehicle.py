@@ -76,12 +76,10 @@ class Vehicle(pygame.sprite.Sprite):
         self.totalEmergencyHoldTime = 0.0
         self.emergencyHoldSuccessLogged = False
 
-        # Once araci fully hazirla (image dahil), ANCAK BUNDAN SONRA
-        # paylasilan engine.vehicles listesine ekle. Spawner thread'i ile
-        # controller thread'i esitzamanli calistigi icin, self.image
-        # set edilmeden once listeye eklenirse controller (vehicle.image'a
-        # dogrudan erisen kod) tam o pencerede araca bakip AttributeError
-        # ile cokebiliyordu.
+        # Fully build the vehicle (image included) before adding it to the
+        # shared engine.vehicles list. The spawner and controller threads run
+        # concurrently, and code reading vehicle.image could otherwise see a
+        # vehicle without an image and raise AttributeError.
         self.originalImage = self.load_vehicle_image(vehicleClass, direction)
         self.image = self.originalImage.copy()
 

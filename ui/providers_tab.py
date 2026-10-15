@@ -177,11 +177,9 @@ class ProvidersTab:
             return
 
         if not self.app.controller_registry.list_by_provider_type(provider_type):
-            # Bu provider type'a uyumlu hicbir strateji yoksa aktif secim
-            # olarak KULLANILAMAZ: aksi halde controller versiyonu eski
-            # provider'da kalirken state provider degismis olur ve
-            # calistirma zamaninda hata verir. Onceki aktif secim geri
-            # yuklenip kullaniciya nedeni bildirilir.
+            # A provider type with no compatible controller cannot be selected:
+            # the controller would stay on the old provider type and the run would
+            # fail. Restore the previous selection and tell the user why.
             previous_type = self.app.provider_type_var.get()
             self.type_list.selection_clear(0, tk.END)
             if previous_type in self.provider_types:
@@ -222,10 +220,8 @@ class ProvidersTab:
         self.type_desc_label.config(text=localized_description(provider, "providers.no_description"))
 
     def show_strategy_detail(self, version):
-        # Ham tuning parametrelerini (params) burada gostermiyoruz -- bu
-        # sekme kullaniciya "hangi strateji, ne yapiyor, neden" sorusunu
-        # cevaplamak icin var, `min_green`/`fairness_lambda` gibi dahili
-        # ayarlarin dokumu degil.
+        # Tuning parameters are not shown here: this tab explains which rule
+        # runs and what it does, it is not a dump of internal settings.
         if "message" in version:
             self.strategy_name_label.config(text="-")
             self.strategy_status_label.config(text="")

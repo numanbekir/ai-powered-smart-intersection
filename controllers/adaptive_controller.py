@@ -1,6 +1,7 @@
 from simulation.signal import TrafficSignal
 
-from controllers.strategies.demand_strategy import APPROACH_NAMES, DemandStrategy
+from controllers.strategies.demand_strategy import DemandStrategy
+from core.i18n import approach_name, t
 
 
 class AdaptiveSignalController:
@@ -106,8 +107,7 @@ class AdaptiveSignalController:
                 self.log_decision(
                     "emergency_hold",
                     self.signals[self.currentGreen].green,
-                    f"{APPROACH_NAMES[direction]} yönde yeşil {extension} saniye uzatıldı: "
-                    f"bu yöndeki acil durum aracının geçmesi bekleniyor.",
+                    t("sim.reason.hold", approach=approach_name(direction), extension=extension),
                 )
 
             elapsed = planned_green - self.signals[self.currentGreen].green
@@ -118,8 +118,7 @@ class AdaptiveSignalController:
                 self.log_decision(
                     "emergency_preemption",
                     elapsed,
-                    f"{APPROACH_NAMES[direction]} yönde yeşil {elapsed}. saniyede kesildi: "
-                    f"başka yönden acil durum aracı yaklaşıyor.",
+                    t("sim.reason.preempt", approach=approach_name(direction), elapsed=elapsed),
                 )
                 self.signals[self.currentGreen].green = 0
                 break
@@ -145,8 +144,7 @@ class AdaptiveSignalController:
             self.log_decision(
                 "continuous_green_extension",
                 1,
-                f"Başka hiçbir yönde araç yok, yeşil "
-                f"{APPROACH_NAMES[self.current_direction()]} yönde sürüyor.",
+                t("sim.reason.keep_green", approach=approach_name(self.current_direction())),
             )
 
     def run_yellow_phase(self):

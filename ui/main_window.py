@@ -34,11 +34,8 @@ class MainWindow:
         i18n.set_language(self.app_state.get("language", i18n.DEFAULT_LANGUAGE))
         self.root.title(t("app.title"))
 
-        # `set_status`/`status_var` kalici tutuluyor (birçok yerden
-        # cagriliyor) ama artik hicbir widget'a bagli degil -- ust
-        # bardaki mavi durum metni kaldirildi, yerine dil dropdown'u
-        # geldi. Bu, cagiri noktalarina dokunmadan gorsel degisikligi
-        # izole ediyor.
+        # `set_status` is still called from many places but is no longer bound
+        # to a widget; the status text was replaced by the language selector.
         self.status_var = tk.StringVar(value="")
         self.controller_mode_var = tk.StringVar(value="adaptive")
         self.provider_type_var = tk.StringVar(value="ground_truth")
@@ -241,11 +238,9 @@ class MainWindow:
         self.save_app_state()
 
     def build_effective_controller_version(self):
-        # Ana ekrandaki emergency/tur-adaleti toggle'lari, secili controller
-        # version'in data/controller_versions.json'daki KAYITLI params'ini
-        # DEGISTIRMEZ -- sadece bu tek calistirma icin bir kopya uzerinde
-        # override edilir (controller_mode_var/provider_type_var'in
-        # app_state.json'a yazilip registry'ye yazilmamasiyla ayni desen).
+        # The emergency and cycle-fairness toggles on the Home tab do not change
+        # the saved params in data/controller_versions.json. They are applied to
+        # a copy for this run only.
         if not self.current_controller_version:
             return None
 
@@ -369,6 +364,7 @@ class MainWindow:
 
         try:
             outcome = run_simulation_window(
+                language=i18n.get_language(),
                 scenario=self.current_scenario,
                 test_name=test_name,
                 controller_mode=self.controller_mode_var.get(),

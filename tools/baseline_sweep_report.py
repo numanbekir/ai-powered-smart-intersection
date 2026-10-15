@@ -27,8 +27,8 @@ from tools.run_batch_tests import SCENARIO_IDS  # noqa: E402
 DEFAULT_INPUT = PROJECT_ROOT / "reports" / "baseline_sweep" / "raw_results.csv"
 DEFAULT_GREEN = 10  # the fixed-time setting every scenario ships with
 SHORT_NAMES = {
-    "adaptive_ground_truth": "tam bilgi",
-    "adaptive_camera": "kamera",
+    "adaptive_ground_truth": "ground truth",
+    "adaptive_camera": "camera",
 }
 
 
@@ -71,9 +71,9 @@ def build(runs):
     adaptive = [c for c in controllers if not c.startswith("fixed_g")]
     default_fixed = f"fixed_g{DEFAULT_GREEN}"
 
-    header = ["Senaryo"] + [f"sabit {c[7:]}s" for c in fixed]
-    header += ["en iyi sabit", "en iyi adaptif", f"kazanç (sabit {DEFAULT_GREEN}s)", "kazanç (en iyi sabit)",
-               "adaptif önde (koşu)", "geçemeyen: sabit / adaptif"]
+    header = ["Scenario"] + [f"fixed {c[7:]}s" for c in fixed]
+    header += ["best fixed", "best adaptive", f"gain (fixed {DEFAULT_GREEN}s)", "gain (best fixed)",
+               "adaptive ahead (runs)", "not crossed: fixed / adaptive"]
     lines = ["| " + " | ".join(header) + " |", "|---|" + "---:|" * (len(header) - 1)]
 
     gains_default, gains_best, relative = [], [], defaultdict(list)
@@ -105,22 +105,22 @@ def build(runs):
         row += [
             f"{best_fixed[7:]}s",
             f"{adaptive_means[best_adaptive]:.1f} ({SHORT_NAMES.get(best_adaptive, best_adaptive)})",
-            f"%{gain_default:.0f}",
-            f"%{gain_best:.0f}",
+            f"{gain_default:.0f}%",
+            f"{gain_best:.0f}%",
             f"{wins}/{len(seeds)}",
-            f"%{avg(runs, (scenario, best_fixed), 'uncrossed_share'):.0f} / %{avg(runs, (scenario, best_adaptive), 'uncrossed_share'):.0f}",
+            f"{avg(runs, (scenario, best_fixed), 'uncrossed_share'):.0f}% / {avg(runs, (scenario, best_adaptive), 'uncrossed_share'):.0f}%",
         ]
         lines.append("| " + " | ".join(row) + " |")
 
     ordered = sorted(gains_best)
     median = ordered[len(ordered) // 2] if len(ordered) % 2 else (ordered[len(ordered) // 2 - 1] + ordered[len(ordered) // 2]) / 2
     summary = [
-        f"- Senaryo sayısı: {len(gains_best)}",
-        f"- Varsayılan sabit süreye ({DEFAULT_GREEN}s) göre kazanç: ortalama %{mean(gains_default):.0f}, en düşük %{min(gains_default):.0f}",
-        f"- Her senaryonun en iyi sabit süresine göre kazanç: ortanca %{median:.0f}, ortalama %{mean(gains_best):.0f}, en düşük %{min(gains_best):.0f}",
-        f"- Adaptifin ortalamada önde olduğu senaryo: {sum(g > 0 for g in gains_best)}/{len(gains_best)}",
-        f"- Adaptifin koşuların en az %80'inde önde olduğu senaryo: {clear_wins}/{len(gains_best)}",
-        "- Tek bir sabit süre seçilseydi (senaryo başına varsayılana oranın ortalaması, küçük olan iyi): "
+        f"- Scenarios: {len(gains_best)}",
+        f"- Gain over the default fixed time ({DEFAULT_GREEN}s): mean {mean(gains_default):.0f}%, lowest {min(gains_default):.0f}%",
+        f"- Gain over each scenario's best fixed time: median {median:.0f}%, mean {mean(gains_best):.0f}%, lowest {min(gains_best):.0f}%",
+        f"- Scenarios where adaptive is ahead on average: {sum(g > 0 for g in gains_best)}/{len(gains_best)}",
+        f"- Scenarios where adaptive is ahead in at least 80% of runs: {clear_wins}/{len(gains_best)}",
+        "- If a single fixed time had to be picked (mean ratio to the default per scenario, lower is better): "
         + ", ".join(f"{c[7:]}s={mean(v):.3f}" for c, v in sorted(relative.items(), key=lambda kv: int(kv[0][7:]))),
     ]
     return lines, summary
@@ -133,10 +133,10 @@ def main():
     args = parser.parse_args()
 
     lines, summary = build(load(args.input))
-    text = "# Sabit süre taraması ve adaptif karşılaştırma\n\n"
-    text += ("Ortalama bekleme süresi (sn), koşu ortalaması. Ölçüme giren tüm araçları kapsar: kavşağı geçenlerin "
-             "beklemesi ve koşu bittiğinde hâlâ kuyrukta olanların o ana kadarki beklemesi. Kazanç, bekleme "
-             "süresindeki azalmadır.\n\n")
+    text = "# Fixed-time sweep and adaptive comparison\n\n"
+    text += ("Average wait (s), mean over runs. Covers every measured vehicle: the wait of those that crossed "
+             "and, for those still queued when the run ended, the wait up to that moment. Gain is the "
+             "reduction in wait.\n\n")
     text += "\n".join(summary) + "\n\n" + "\n".join(lines) + "\n"
 
     output = args.output or args.input.with_name("summary.md")

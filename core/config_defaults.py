@@ -36,10 +36,8 @@ def default_scenario_config() -> Dict[str, Any]:
         "fps": 60,
         "simulation_time": 120,
         "playback_speed": 1.0,
-        # v/c (talep/kapasite) ~0.55 -- olculmus doygun sistem kapasitesi
-        # (~0.478 arac/sn, gercek kavsak kayitlariyla kalibre edilmis; bkz.
-        # docs/scenario_capacity_calibration.md) uzerinden "dengeli/orta" bir
-        # varsayilan. 1.0 (v/c~0.90, fiilen peak) DEGILDI.
+        # v/c ~0.55 against the measured capacity of 1.00 veh/s per approach
+        # (see docs/scenario_capacity_calibration.md), a balanced default.
         "spawn_interval": 1.82,
         "random_seed": 42,
         "allowed_vehicle_types": {
@@ -136,7 +134,7 @@ def default_controller_versions() -> List[Dict[str, Any]]:
     return [
         version(
             "adaptive_ground_truth",
-            "Adaptif - Tam Bilgi",
+            "Adaptive - Ground Truth",
             "ground_truth",
             "Adaptive rule fed with the exact vehicles on each approach, read from the "
             "simulation. The upper bound a camera could reach.",
@@ -145,7 +143,7 @@ def default_controller_versions() -> List[Dict[str, Any]]:
         ),
         version(
             "adaptive_camera",
-            "Adaptif - Kamera (YOLO)",
+            "Adaptive - Camera (YOLO)",
             "yolo",
             "The same adaptive rule fed only with what the YOLO detector sees on the "
             "overhead camera frame.",

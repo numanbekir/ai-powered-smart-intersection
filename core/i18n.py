@@ -1,7 +1,6 @@
-"""Tkinter control-center UI translations (Home/Scenarios/Providers tabs,
-scenario editor). Scope is deliberately limited to this UI shell -- the
-pygame simulation view and the strategies' per-decision reasoning text
-stay English/technical, as before.
+"""UI translations: the Tkinter control center (Home/Scenarios/Providers
+tabs, scenario editor), the pygame simulation window and the decision
+explanations written by the adaptive controller. English is the default.
 
 Scenario/controller-version/state-provider `display_name` and
 `scenario_name` are NOT translated: they double as lookup keys
@@ -154,6 +153,64 @@ TRANSLATIONS = {
         "editor.msg_invalid_value": "Invalid value: {error}",
         "editor.msg_saved_title": "Saved",
         "editor.msg_saved_body": "Scenario saved: {name}",
+        # Simulation window (pygame) and decision explanations
+        "sim.approach.right": "West",
+        "sim.approach.down": "North",
+        "sim.approach.left": "East",
+        "sim.approach.up": "South",
+        "sim.signal.right": "WEST",
+        "sim.signal.down": "NORTH",
+        "sim.signal.left": "EAST",
+        "sim.signal.up": "SOUTH",
+        "sim.reason.emergency": "{approach} gets a {green} s green: an emergency vehicle is "
+                                "{distance} px from the stop line with {ahead} vehicles ahead of it.",
+        "sim.reason.no_demand": "No vehicles on any approach, the green stays on {approach}.",
+        "sim.reason.normal": "{approach} gets a {green} s green. It had {count} vehicles and had "
+                             "been red for {red} s.{note}",
+        "sim.reason.fairness_note": " It was its turn in the cycle.",
+        "sim.reason.hold": "Green on {approach} extended by {extension} s so the emergency "
+                           "vehicle can cross.",
+        "sim.reason.preempt": "Green on {approach} cut after {elapsed} s: an emergency vehicle "
+                              "is coming from another approach.",
+        "sim.reason.keep_green": "No vehicles on the other approaches, the green stays on {approach}.",
+        "sim.reason.fixed": "Fixed time: each approach gets a {green} s green in turn.",
+        "sim.seconds": "{value} s",
+        "sim.percent": "{value}%",
+        "sim.header.time": "{elapsed} / {total} s",
+        "sim.header.fixed": "Fixed time",
+        "sim.header.detection": "{model}, detection {ms} ms",
+        "sim.header.speed": "speed {speed}x",
+        "sim.card.approaches": "Approaches",
+        "sim.card.decision": "Last decision",
+        "sim.card.totals": "This run",
+        "sim.card.phases": "Recent greens",
+        "sim.col.approach": "Approach",
+        "sim.col.signal": "Signal",
+        "sim.col.vehicles": "Vehicles",
+        "sim.col.vehicles_camera": "Vehicles (camera)",
+        "sim.col.wait": "Wait",
+        "sim.col.crossed": "Crossed",
+        "sim.row.emergency": "emergency vehicle",
+        "sim.row.next": "next",
+        "sim.light.green": "green  {remaining} s",
+        "sim.light.yellow": "yellow  {remaining} s",
+        "sim.light.red": "red",
+        "sim.row.actual": "actual {count}",
+        "sim.stat.crossed": "vehicles crossed",
+        "sim.stat.delay": "avg delay",
+        "sim.stat.longest_wait": "longest wait",
+        "sim.stat.camera_correct": "camera count correct",
+        "sim.stat.emergency_wait": "emergency wait",
+        "sim.phase.time": "{time} s",
+        "sim.phase.green": "{green} s green",
+        "sim.phase.crossed": "{count} crossed",
+        "sim.phase.emergency": "emergency priority",
+        "sim.phase.none": "No completed greens yet.",
+        "sim.button.pause": "Pause",
+        "sim.button.resume": "Resume",
+        "sim.button.stop": "Stop",
+        "sim.button.restart": "Restart",
+        "sim.paused": "PAUSED",
     },
     "tr": {
         "app.title": "AI-Powered Smart Intersection",
@@ -289,6 +346,64 @@ TRANSLATIONS = {
         "editor.msg_invalid_value": "Geçersiz değer: {error}",
         "editor.msg_saved_title": "Kaydedildi",
         "editor.msg_saved_body": "Senaryo kaydedildi: {name}",
+        # Simulation window (pygame) and decision explanations
+        "sim.approach.right": "Sol",
+        "sim.approach.down": "Yukarı",
+        "sim.approach.left": "Sağ",
+        "sim.approach.up": "Aşağı",
+        "sim.signal.right": "SOL",
+        "sim.signal.down": "YUKARI",
+        "sim.signal.left": "SAĞ",
+        "sim.signal.up": "AŞAĞI",
+        "sim.reason.emergency": "{approach} yöne {green} saniye yeşil verildi: acil durum aracı "
+                                "dur çizgisine {distance} piksel uzakta, önünde {ahead} araç var.",
+        "sim.reason.no_demand": "Hiçbir yönde araç yok, yeşil {approach} yönde kalıyor.",
+        "sim.reason.normal": "{approach} yöne {green} saniye yeşil verildi. O anda {count} araç "
+                             "vardı, yön {red} saniyedir kırmızıydı.{note}",
+        "sim.reason.fairness_note": " Tur adaleti gereği sıra bu yöndeydi.",
+        "sim.reason.hold": "{approach} yönde yeşil {extension} saniye uzatıldı: bu yöndeki acil "
+                           "durum aracının geçmesi bekleniyor.",
+        "sim.reason.preempt": "{approach} yönde yeşil {elapsed}. saniyede kesildi: başka yönden "
+                              "acil durum aracı yaklaşıyor.",
+        "sim.reason.keep_green": "Başka hiçbir yönde araç yok, yeşil {approach} yönde sürüyor.",
+        "sim.reason.fixed": "Sabit süre: her yöne sırayla {green} saniye yeşil verilir.",
+        "sim.seconds": "{value} sn",
+        "sim.percent": "%{value}",
+        "sim.header.time": "{elapsed} / {total} sn",
+        "sim.header.fixed": "Sabit süre",
+        "sim.header.detection": "{model}, tespit {ms} ms",
+        "sim.header.speed": "hız {speed}x",
+        "sim.card.approaches": "Yönler",
+        "sim.card.decision": "Son karar",
+        "sim.card.totals": "Bu koşu",
+        "sim.card.phases": "Son yeşiller",
+        "sim.col.approach": "Yön",
+        "sim.col.signal": "Işık",
+        "sim.col.vehicles": "Araç",
+        "sim.col.vehicles_camera": "Araç (kamera)",
+        "sim.col.wait": "Bekleme",
+        "sim.col.crossed": "Geçen",
+        "sim.row.emergency": "acil durum aracı",
+        "sim.row.next": "sıradaki",
+        "sim.light.green": "yeşil  {remaining} sn",
+        "sim.light.yellow": "sarı  {remaining} sn",
+        "sim.light.red": "kırmızı",
+        "sim.row.actual": "gerçek {count}",
+        "sim.stat.crossed": "geçen araç",
+        "sim.stat.delay": "geçenlerde gecikme",
+        "sim.stat.longest_wait": "en uzun bekleme",
+        "sim.stat.camera_correct": "kamera sayımı doğru",
+        "sim.stat.emergency_wait": "acil durum beklemesi",
+        "sim.phase.time": "{time}. sn",
+        "sim.phase.green": "{green} sn yeşil",
+        "sim.phase.crossed": "{count} araç geçti",
+        "sim.phase.emergency": "acil durum önceliği",
+        "sim.phase.none": "Henüz tamamlanan yeşil yok.",
+        "sim.button.pause": "Duraklat",
+        "sim.button.resume": "Devam et",
+        "sim.button.stop": "Durdur",
+        "sim.button.restart": "Yeniden başlat",
+        "sim.paused": "DURAKLATILDI",
     },
 }
 
@@ -314,3 +429,8 @@ def localized_description(entity, fallback_key="scenarios.no_description"):
     if _current_language == "tr" and entity.get("description_tr"):
         return entity["description_tr"]
     return entity.get("description") or t(fallback_key)
+
+
+def approach_name(direction):
+    """Display name of an approach, e.g. "right" -> "West"."""
+    return t(f"sim.approach.{direction}")

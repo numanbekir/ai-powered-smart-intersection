@@ -25,10 +25,8 @@ class ScenariosTab:
         self.left_frame.pack(side="left", fill="both", expand=True, padx=(0, 5))
         self.right_frame.pack(side="left", fill="y", padx=(5, 0))
 
-        # Sabit genislik/yukseklik: senaryolar arasi gecince aciklama metninin
-        # UZUNLUGU degistigi icin, bu panel content'e gore serbest
-        # buyuyup/kuculmesin diye propagate kapatilip boyut elle sabitlendi
-        # (aksi halde her senaryo secildiginde panel genisligi titriyordu).
+        # Fixed size: otherwise the panel resizes with the length of each
+        # scenario description and flickers when the selection changes.
         self.right_frame.pack_propagate(False)
         self.right_frame.configure(width=420, height=560)
 

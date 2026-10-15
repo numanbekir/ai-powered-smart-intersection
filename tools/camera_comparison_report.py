@@ -48,11 +48,11 @@ def main():
     load(CAMERA, runs)
 
     lines = [
-        "| Senaryo | en iyi sabit | tam bilgi | kamera | kamera kazancı (en iyi sabit) | kameranın tam bilgiye göre kaybı | kamera önde (koşu) | geçemeyen: tam bilgi / kamera |",
+        "| Scenario | best fixed | ground truth | camera | camera gain (best fixed) | camera minus ground truth | camera ahead (runs) | not crossed: ground truth / camera |",
         "|---|---:|---:|---:|---:|---:|---:|---:|",
     ]
     emergency_lines = [
-        "| Senaryo | en iyi sabit | tam bilgi | kamera |",
+        "| Scenario | best fixed | ground truth | camera |",
         "|---|---:|---:|---:|",
     ]
     gains, losses, ahead = [], [], 0
@@ -83,8 +83,8 @@ def main():
 
         lines.append(
             f"| {scenario} | {fixed_wait:.1f} ({best_fixed.replace('fixed_g', '')}s) | {truth_wait:.1f} | "
-            f"{camera_wait:.1f} | %{camera_gain:.0f} | {loss:+.1f} sn | {wins}/{len(seeds)} | "
-            f"%{avg(truth, 'uncrossed'):.0f} / %{avg(camera, 'uncrossed'):.0f} |"
+            f"{camera_wait:.1f} | {camera_gain:.0f}% | {loss:+.1f} s | {wins}/{len(seeds)} | "
+            f"{avg(truth, 'uncrossed'):.0f}% / {avg(camera, 'uncrossed'):.0f}% |"
         )
 
         if avg(camera, "emergency_spawned") > 0:
@@ -94,18 +94,18 @@ def main():
             )
 
     summary = [
-        "# Sabit süre, tam bilgili adaptif ve kameralı adaptif",
+        "# Fixed time, ground-truth adaptive and camera adaptive",
         "",
-        "Ortalama bekleme süresi (sn), ölçüme giren tüm araçlar. Üç kontrolcü aynı senaryo ve tohumlarla koşuldu.",
-        "Kameralı kontrolcü tam bilgili kontrolcüyle aynı karar kuralını kullanır, girdisi yalnızca YOLO tespitleridir.",
+        "Average wait (s), every measured vehicle. All three controllers ran on the same scenarios and seeds.",
+        "The camera controller uses the same decision rule as the ground-truth controller; its only input is the YOLO detections.",
         "",
-        f"- Kameralı kontrolün en iyi sabit süreye göre kazancı: ortanca %{median(gains):.0f}, ortalama %{mean(gains):.0f}, en düşük %{min(gains):.0f}",
-        f"- Kameralı kontrolün ortalamada sabit sürenin önünde olduğu senaryo: {ahead}/{len(gains)}",
-        f"- Tam bilgiye göre kayıp (kamera eksi tam bilgi): ortanca {median(losses):+.1f} sn, en yüksek {max(losses):+.1f} sn",
+        f"- Camera gain over the best fixed time: median {median(gains):.0f}%, mean {mean(gains):.0f}%, lowest {min(gains):.0f}%",
+        f"- Scenarios where the camera controller beats fixed time on average: {ahead}/{len(gains)}",
+        f"- Camera minus ground truth: median {median(losses):+.1f} s, highest {max(losses):+.1f} s",
         "",
         *lines,
         "",
-        "## Acil durum araçlarının ortalama beklemesi (sn)",
+        "## Average wait of emergency vehicles (s)",
         "",
         *emergency_lines,
         "",

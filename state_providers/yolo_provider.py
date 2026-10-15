@@ -239,11 +239,11 @@ class YoloStateProvider(BaseStateProvider):
         for direction in DIRECTIONS:
             info = observation[direction]
             if info["is_saturated"]:
-                level, color = "dolu", (235, 90, 90)
+                level, color = "full", (235, 90, 90)
             elif info["queue_count"] > 0:
-                level, color = "kuyruk", (240, 190, 70)
+                level, color = "queue", (240, 190, 70)
             else:
-                level, color = "boş", (120, 210, 140)
+                level, color = "empty", (120, 210, 140)
             rich_state[direction] = {
                 "queue_count": info["queue_count"],
                 "visible_count": info["visible_count"],

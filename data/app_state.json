@@ -1,7 +1,7 @@
 {
   "selected_scenario_id": "balanced_traffic",
-  "selected_controller_version_id": "adaptive_ground_truth",
-  "selected_state_provider_id": "ground_truth_v1",
+  "selected_controller_version_id": "adaptive_camera",
+  "selected_state_provider_id": "yolo_v1",
   "emergency_priority_enabled": true,
   "cycle_fairness_enabled": true,
   "language": "tr"

@@ -1,7 +1,7 @@
 [
   {
     "version_id": "adaptive_ground_truth",
-    "display_name": "Adaptif - Tam Bilgi",
+    "display_name": "Adaptive - Ground Truth",
     "description": "Adaptive rule fed with the exact vehicles on each approach, read from the simulation. The upper bound a camera could reach.",
     "description_tr": "Adaptif karar kuralı, her yöndeki araçları simülasyondan hatasız okuyarak çalışır. Bir kameranın ulaşabileceği üst sınırdır.",
     "controller_family": "adaptive",
@@ -37,7 +37,7 @@
   },
   {
     "version_id": "adaptive_camera",
-    "display_name": "Adaptif - Kamera (YOLO)",
+    "display_name": "Adaptive - Camera (YOLO)",
     "description": "The same adaptive rule fed only with what the YOLO detector sees on the overhead camera frame.",
     "description_tr": "Aynı adaptif karar kuralı, yalnızca YOLO modelinin üstten kamera karesinde tespit ettikleriyle çalışır.",
     "controller_family": "adaptive",

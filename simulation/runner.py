@@ -7,8 +7,13 @@ new Tkinter input fields crashes the interpreter.
 import multiprocessing
 
 
-def _run(connection, engine_arguments):
+def _run(connection, language, engine_arguments):
+    import core.i18n as i18n
     from simulation.engine import SimulationEngine
+
+    # The window runs in a fresh process, so the language chosen in the
+    # main window has to be passed on.
+    i18n.set_language(language)
 
     try:
         while True:
@@ -20,19 +25,19 @@ def _run(connection, engine_arguments):
         connection.send(("error", str(error)))
 
 
-def run_simulation_window(**engine_arguments):
+def run_simulation_window(language="en", **engine_arguments):
     """Blocks until the simulation window is closed and returns the
     outcome of the last run: {"action": ..., "result": ...}."""
     context = multiprocessing.get_context("spawn")
     receiver, sender = context.Pipe(duplex=False)
-    process = context.Process(target=_run, args=(sender, engine_arguments))
+    process = context.Process(target=_run, args=(sender, language, engine_arguments))
     process.start()
     sender.close()
 
     try:
         status, payload = receiver.recv()
     except EOFError:
-        raise RuntimeError("Simülasyon penceresi beklenmedik biçimde kapandı.") from None
+        raise RuntimeError("The simulation window closed unexpectedly.") from None
     finally:
         process.join()
 

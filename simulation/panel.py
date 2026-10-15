@@ -6,7 +6,7 @@ number is read from the engine, nothing is computed for display only.
 """
 import pygame
 
-from controllers.strategies.demand_strategy import APPROACH_NAMES
+from core.i18n import approach_name, get_language, t
 from core.paths import FONTS_DIR
 from state_providers.ground_truth_provider import GroundTruthStateProvider
 
@@ -93,7 +93,10 @@ class SidePanel:
 
     @staticmethod
     def seconds(value, digits=0):
-        return f"{value:.{digits}f} sn".replace(".", ",")
+        number = f"{value:.{digits}f}"
+        if get_language() == "tr":
+            number = number.replace(".", ",")
+        return t("sim.seconds", value=number)
 
     # --- data --------------------------------------------------------------
 
@@ -133,7 +136,7 @@ class SidePanel:
         engine = self.engine
         if engine.controller_mode != "adaptive":
             green = engine.fixed_config["green_time"]
-            return f"Sabit süre: her yöne sırayla {green} saniye yeşil verilir."
+            return t("sim.reason.fixed", green=green)
         return engine.latest_decision_context.get("reason_full") or "-"
 
     # --- sections ------------------------------------------------------------
@@ -145,20 +148,30 @@ class SidePanel:
         self.text(screen, engine.scenario.get("scenario_name", "-"), x, y, self.title_font)
         self.text(
             screen,
-            f"{engine.simulation_elapsed:.0f} / {engine.simulation_time:.0f} sn",
+            t(
+                "sim.header.time",
+                elapsed=f"{engine.simulation_elapsed:.0f}",
+                total=f"{engine.simulation_time:.0f}",
+            ),
             right, y, self.title_font, align="right",
         )
         y += 32
 
-        controller = "Sabit süre"
+        controller = t("sim.header.fixed")
         if engine.controller_mode == "adaptive" and engine.controller_version:
             controller = engine.controller_version.get("display_name", "-")
         if self.uses_camera:
             provider = engine.state_provider
-            controller += f"   ·   {provider.MODEL_NAME}, tespit {provider.inference_ms:.0f} ms"
+            detection = t(
+                "sim.header.detection",
+                model=provider.MODEL_NAME,
+                ms=f"{provider.inference_ms:.0f}",
+            )
+            controller += f"   ·   {detection}"
         self.text(screen, controller, x, y, self.small_font, MUTED)
         self.text(
-            screen, f"hız {engine.playback_speed:g}x", right, y, self.small_font, MUTED,
+            screen, t("sim.header.speed", speed=f"{engine.playback_speed:g}"), right, y,
+            self.small_font, MUTED,
             align="right",
         )
         return y + 32
@@ -166,7 +179,7 @@ class SidePanel:
     def draw_directions(self, screen, y):
         engine = self.engine
         height = 36 + 24 + 4 * ROW_H + 8
-        top = self.card(screen, y, height, "Yönler")
+        top = self.card(screen, y, height, t("sim.card.approaches"))
         x = self.rect.x + PAD + INNER
         right = self.rect.right - PAD - INNER
 
@@ -175,12 +188,12 @@ class SidePanel:
         wait_right = right - 80
         crossed_right = right
 
-        count_title = "Araç (kamera)" if self.uses_camera else "Araç"
-        self.text(screen, "Yön", x, top, self.small_font, MUTED)
-        self.text(screen, "Işık", light_x, top, self.small_font, MUTED)
+        count_title = t("sim.col.vehicles_camera" if self.uses_camera else "sim.col.vehicles")
+        self.text(screen, t("sim.col.approach"), x, top, self.small_font, MUTED)
+        self.text(screen, t("sim.col.signal"), light_x, top, self.small_font, MUTED)
         self.text(screen, count_title, count_x, top, self.small_font, MUTED)
-        self.text(screen, "Bekleme", wait_right, top, self.small_font, MUTED, "right")
-        self.text(screen, "Geçen", crossed_right, top, self.small_font, MUTED, "right")
+        self.text(screen, t("sim.col.wait"), wait_right, top, self.small_font, MUTED, "right")
+        self.text(screen, t("sim.col.crossed"), crossed_right, top, self.small_font, MUTED, "right")
         row_y = top + 24
 
         current = engine.get_current_green_direction()
@@ -199,18 +212,21 @@ class SidePanel:
                 )
             text_y = row_y + 6
 
-            self.text(screen, APPROACH_NAMES[direction], x, text_y, self.strong_font)
+            self.text(screen, approach_name(direction), x, text_y, self.strong_font)
             longest, emergency = self.waiting(direction)
             if emergency:
-                self.text(screen, "acil durum aracı", x, text_y + 19, self.small_font, RED)
+                self.text(screen, t("sim.row.emergency"), x, text_y + 19, self.small_font, RED)
             elif direction == upcoming and not is_current:
-                self.text(screen, "sıradaki", x, text_y + 19, self.small_font, ACCENT)
+                self.text(screen, t("sim.row.next"), x, text_y + 19, self.small_font, ACCENT)
 
             if is_current:
                 color = YELLOW if yellow else GREEN
-                label = f"{'sarı' if yellow else 'yeşil'}  {max(0, int(remaining))} sn"
+                label = t(
+                    "sim.light.yellow" if yellow else "sim.light.green",
+                    remaining=max(0, int(remaining)),
+                )
             else:
-                color, label = RED, "kırmızı"
+                color, label = RED, t("sim.light.red")
             pygame.draw.circle(screen, color, (light_x + 6, row_y + ROW_H // 2), 6)
             self.text(
                 screen, label, light_x + 20, row_y + 13,
@@ -233,7 +249,7 @@ class SidePanel:
                     (bar.x, bar.y, filled, bar.height), border_radius=3,
                 )
             if mismatch:
-                self.text(screen, f"gerçek {real}", bar.x, row_y + 27, self.small_font, YELLOW)
+                self.text(screen, t("sim.row.actual", count=real), bar.x, row_y + 27, self.small_font, YELLOW)
 
             self.text(screen, self.seconds(longest), wait_right, row_y + 13, align="right")
             self.text(
@@ -247,7 +263,7 @@ class SidePanel:
         width = self.rect.width - 2 * PAD - 2 * INNER
         lines = self.wrap(self.last_decision(), width, 3)
         height = 36 + 3 * 22 + 10
-        top = self.card(screen, y, height, "Son karar")
+        top = self.card(screen, y, height, t("sim.card.decision"))
         for line in lines:
             self.text(screen, line, self.rect.x + PAD + INNER, top, self.font)
             top += 22
@@ -256,7 +272,7 @@ class SidePanel:
     def draw_totals(self, screen, y):
         engine = self.engine
         height = 36 + 58
-        top = self.card(screen, y, height, "Bu koşu")
+        top = self.card(screen, y, height, t("sim.card.totals"))
         x = self.rect.x + PAD + INNER
 
         delays = engine.vehicleDelays
@@ -265,20 +281,23 @@ class SidePanel:
         emergency_waits = engine.emergencyVehicleMetrics["wait_times"]
 
         stats = [
-            (str(len(delays)), "geçen araç"),
-            (self.seconds(sum(delays) / len(delays), 1) if delays else "-", "geçenlerde gecikme"),
-            (self.seconds(max(waits)), "en uzun bekleme"),
+            (str(len(delays)), t("sim.stat.crossed")),
+            (
+                self.seconds(sum(delays) / len(delays), 1) if delays else "-",
+                t("sim.stat.delay"),
+            ),
+            (self.seconds(max(waits)), t("sim.stat.longest_wait")),
         ]
         if self.uses_camera:
             share = 100.0 * self.camera_matches / self.camera_checks if self.camera_checks else 0.0
-            stats.append((f"%{share:.0f}", "kamera sayımı doğru"))
+            stats.append((t("sim.percent", value=f"{share:.0f}"), t("sim.stat.camera_correct")))
         else:
             stats.append(
                 (
                     self.seconds(sum(emergency_waits) / len(emergency_waits), 1)
                     if emergency_waits
                     else "-",
-                    "acil durum beklemesi",
+                    t("sim.stat.emergency_wait"),
                 )
             )
 
@@ -291,37 +310,41 @@ class SidePanel:
     def draw_phases(self, screen, y):
         bottom = self.buttons["pause"].top - GAP
         height = bottom - y
-        top = self.card(screen, y, height, "Son yeşiller")
+        top = self.card(screen, y, height, t("sim.card.phases"))
         x = self.rect.x + PAD + INNER
         right = self.rect.right - PAD - INNER
 
         rows = max(1, (bottom - top - 8) // 24)
         history = self.engine.recent_phase_history[-rows:]
         if not history:
-            self.text(screen, "Henüz tamamlanan yeşil yok.", x, top, self.small_font, MUTED)
+            self.text(screen, t("sim.phase.none"), x, top, self.small_font, MUTED)
             return
 
         for phase in reversed(history):
-            self.text(screen, f"{phase['time']:.0f}. sn", x, top, self.small_font, MUTED)
-            self.text(screen, APPROACH_NAMES[phase["direction"]], x + 70, top, self.small_font)
             self.text(
-                screen, f"{phase['actual_green']:.0f} sn yeşil", x + 150, top, self.small_font, MUTED
+                screen, t("sim.phase.time", time=f"{phase['time']:.0f}"), x, top,
+                self.small_font, MUTED,
+            )
+            self.text(screen, approach_name(phase["direction"]), x + 70, top, self.small_font)
+            self.text(
+                screen, t("sim.phase.green", green=f"{phase['actual_green']:.0f}"), x + 150, top,
+                self.small_font, MUTED,
             )
             self.text(
-                screen, f"{phase['vehicles_crossed']} araç geçti", x + 250, top,
+                screen, t("sim.phase.crossed", count=phase["vehicles_crossed"]), x + 250, top,
                 self.small_font, MUTED,
             )
             if phase.get("emergency"):
                 self.text(
-                    screen, "acil durum önceliği", right, top, self.small_font, RED, "right"
+                    screen, t("sim.phase.emergency"), right, top, self.small_font, RED, "right"
                 )
             top += 24
 
     def draw_buttons(self, screen):
         titles = {
-            "pause": "Devam et" if self.engine.paused else "Duraklat",
-            "stop": "Durdur",
-            "restart": "Yeniden başlat",
+            "pause": t("sim.button.resume" if self.engine.paused else "sim.button.pause"),
+            "stop": t("sim.button.stop"),
+            "restart": t("sim.button.restart"),
         }
         for name, rect in self.buttons.items():
             pygame.draw.rect(screen, BUTTON, rect, border_radius=8)

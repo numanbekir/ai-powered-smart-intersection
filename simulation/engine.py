@@ -8,6 +8,7 @@ import pygame
 
 from controllers.adaptive_controller import AdaptiveSignalController
 from controllers.fixed_time_controller import FixedTimeSignalController
+from core.i18n import t
 from core.paths import IMAGES_DIR
 from simulation.decision_logger import DecisionLogger
 from simulation.metrics import summarize_direction
@@ -20,26 +21,6 @@ from state_providers.yolo_provider import YoloStateProvider
 class SimulationEngine:
     ACTIVE_LANES = [1, 2]
 
-    # Sim gorunumundeki isik etiketleri ile kontrol panelindeki (hero)
-    # etiketlerin AYNI olmasi icin tek, paylasilan kaynak -- hangi fiziksel
-    # isigin hangi mantiksal yone ait oldugu konusunda karisiklik olmasin.
-    #
-    # NOT: bu degerler artik aracin hareket yonune gore degil, isigin
-    # EKRANDAKI FIZIKSEL KONUMUNA gore etiketleniyor.
-    # Ic anahtarlar ("right"/"down"/"left"/"up") aracin hareket yonunu
-    # temsil etmeye devam ediyor -- degismedi, hicbir strateji/test/
-    # scenario JSON'u bundan etkilenmiyor, SADECE bu sozlugun DEGERLERI
-    # (ekranda gosterilen metin) degisti. Geometrik dogrulama
-    # (__init__'teki stopLines/signalCoods koordinatlarindan): "right"
-    # (saga/dogu yonune hareket eden araclar) isigi fiziksel olarak
-    # ekranin SOL-ALT bolgesinde; "left" isigi SAG-UST'te; "down" (asagi
-    # hareket) isigi UST-SOL'da; "up" isigi ALT-SAG'da -- yani her isik,
-    # aracin hareket yonunun TAM TERSI konumda (arac o yone GIDIYOR,
-    # isik/kuyruk ise GELDIGI kenarda duruyor). Bu yuzden konum-bazli
-    # etiket, hareket-yonu etiketinin caprazi: right<->left, down<->up.
-    SIGNAL_LABELS = {"right": "SOL", "down": "YUKARI", "left": "SAĞ", "up": "AŞAĞI"}
-
-    # __init__ imzası
     def __init__(
         self,
         scenario,
@@ -311,17 +292,10 @@ class SimulationEngine:
             time.sleep(0.05)
 
     def scaled_sleep(self, seconds):
-        # `seconds` burada simüle edilmiş saniye anlamına gelir. Eskiden bu
-        # metod gerçek wall-clock zamanında uyuyordu ve "1 simüle saniye"nin
-        # gerçekte ne kadar sürdüğünü, ana döngünün gerçekten `fps` hızında
-        # çalıştığını varsayarak tahmin ediyordu. Ana döngü yavaşladığında
-        # (ör. çok araç birikince) bu varsayım bozulup controller/spawner
-        # thread'lerinin simüle zamanı ana döngüden farklı ilerletmesine,
-        # dolayısıyla aynı seed'in farklı sonuç üretmesine yol açıyordu.
-        # Artık bu metod, ana döngünün `advance_simulation_time()` ile
-        # ilerlettiği tek otoriter `simulation_elapsed` değerine ulaşılmasını
-        # bekliyor; böylece controller/spawner'ın "zamanı", gerçek dünya
-        # zamanlamasından bağımsız olarak ana döngüyle birebir örtüşüyor.
+        # `seconds` are simulated seconds. The thread waits until the single
+        # authoritative clock (`simulation_elapsed`, advanced by the main loop)
+        # reaches its wake-up time, so controller and spawner time never drift
+        # from the main loop, whatever the real frame rate is.
         #
         # The thread registers its wake-up time and is woken by the main loop
         # (advance_simulation_time removes the entry). While the entry exists
@@ -370,18 +344,10 @@ class SimulationEngine:
             self._tick_condition.notify_all()
 
     def _join_worker_threads(self, *threads, timeout=2.0):
-        # Controller/spawner thread'leri (daemon=True) `simulationRunning`
-        # bayragini kontrol ederek kendiliklerinden cikar, ama bunu ne zaman
-        # farkedeceklerinin (ornegin scaled_sleep icindeki wait(timeout))
-        # garantisi yok. `pygame.quit()` ana thread'de calisirken, spawner
-        # thread hala `load_vehicle_image` icinde pygame.image.load/convert_alpha
-        # gibi SDL cagrilari yapiyor olabilir -- bu, SDL'in ayni anda hem
-        # yikilip hem baska bir thread'den kullanilmasi demek, ki bu segfault'a
-        # yol aciyordu (birkac calistirma sonra "New/Edit Scenario" penceresi
-        # acilirken gozlemlendi -- onceki kosunun spawner thread'i hala SDL'e
-        # dokunurken pygame.quit() calismis, sonraki Tk islemleri bu bozuk
-        # durumun ustune denk gelmis). pygame.quit()'ten ONCE thread'lerin
-        # gercekten bittigini dogrulamak bu yarisi ortadan kaldirir.
+        # The worker threads exit on their own once `simulationRunning` is false,
+        # but the spawner may still be inside an SDL call (image load). Calling
+        # pygame.quit() while it is crashed the process, so wait for the threads
+        # to finish first.
         for thread in threads:
             if thread is not None and thread.is_alive():
                 thread.join(timeout=timeout)
@@ -413,13 +379,9 @@ class SimulationEngine:
             current_idx = int(getattr(self.controller, "currentGreen", 0))
             return self.directionNumbers.get((current_idx + 1) % 4, "-")
 
-        # Adaptif modda faz gecisleri reaktif oldugundan (karar, faz
-        # BITERKEN aninda verilir, onceden hesaplanmaz), "sirada ne var"
-        # sorusunun tek dogru cevabi live bir onizlemedir -- decision_logger/
-        # latest_decision_context yalnizca kararin ANINDA anlamli, faz
-        # devam ederken (henuz yeni karar verilmediginden) bayat kalir.
-        # preview_next_direction() bunun icin yazildi: hicbir state'e
-        # yazmayan, her frame guvenle cagrilabilen salt-okunur bir tahmin.
+        # Adaptive phases are decided when the current green ends, not in
+        # advance, so "what comes next" can only be a live preview. This is a
+        # read-only estimate that is safe to call every frame.
         strategy = getattr(self.controller, "strategy", None)
         preview_fn = getattr(strategy, "preview_next_direction", None)
 
@@ -491,9 +453,7 @@ class SimulationEngine:
             "emergency": "acil durum" in reason.lower(),
         })
 
-        # Terminal-log paneli 200'e kadar gecmisi scroll edilebilir tutuyor
-        # (eski 15'lik "chip" limiti, artik sabit genislikte kutucuklar
-        # olmadigindan gerekmiyor).
+        # The side panel shows up to the last 200 phases.
         if len(self.recent_phase_history) > 200:
             self.recent_phase_history = self.recent_phase_history[-200:]
 
@@ -534,14 +494,9 @@ class SimulationEngine:
             "reason": reason,
         })
 
-        # `latest_decision_context` onceden hic guncellenmiyordu (yalnizca
-        # __init__'te bir kerelik placeholder set ediliyordu) -- panel bu
-        # yuzden emergency box'taki "mode" kontrolu gibi bazi gostergelerde
-        # hep bos/varsayilan degeri okuyordu. Artik her karar/olayda
-        # guncelleniyor; direction_debug/score_semantics yalnizca gercekten
-        # verilmisse (bir strateji karari ise) degistiriliyor, mid-phase
-        # olaylarda (emergency_hold/preemption gibi decision_meta'si olmayan
-        # cagrilarda) onceki karardan kalan degerler korunuyor.
+        # Updated on every decision and event. direction_debug and
+        # score_semantics are only replaced by real strategy decisions;
+        # mid-phase events (emergency hold, preemption) keep the previous ones.
         if phase in ("emergency_hold", "emergency_preemption"):
             mode = "emergency_hold_priority"
         elif emergency_priority:
@@ -1019,11 +974,8 @@ class SimulationEngine:
         if self.headless:
             return self.run_headless()
 
-        # Sim alani (kavsak gorseli, arac/isik/durma-donus koordinatlari)
-        # her yerde hardcoded 0-900 piksel araliginda calisiyor (bkz.
-        # self.x/self.y/self.stopLines/self.defaultStop/self.turnTriggerPoints,
-        # hepsi __init__'te sabit) -- pencereyi genisletmek SADECE panele
-        # daha fazla yer acar, sim alanini hic etkilemez.
+        # The intersection area is fixed at 900x900 px (all coordinates in
+        # __init__ assume it). A wider window only adds room for the panel.
         SIM_AREA_W = 900
         PANEL_W = 640
         WINDOW_W = SIM_AREA_W + PANEL_W
@@ -1118,13 +1070,10 @@ class SimulationEngine:
                 signal_rect = signal_surface.get_rect(center=signal_pos)
                 screen.blit(signal_surface, signal_rect.topleft)
 
-                # Her isigin hangi mantiksal yone ait oldugunu gosteren
-                # etiket -- fiziksel konum (ekranda nerede durdugu) ile
-                # yon ismi (hangi yone giden trafigin isigi oldugu) arasindaki
-                # karisikligi onlemek icin. Panelin ust bolumundeki (hero)
-                # etiketlerle AYNI isimler kullanilir.
+                # Label every signal with the approach it controls, using the same
+                # names as the side panel.
                 direction_name = self.directionNumbers[i]
-                label_text = self.SIGNAL_LABELS.get(direction_name, direction_name.upper())
+                label_text = t(f"sim.signal.{direction_name}")
                 label_surf = signal_label_font.render(label_text, True, (255, 255, 255))
                 label_rect = label_surf.get_rect(
                     midtop=(signal_rect.centerx, signal_rect.bottom + 2)
@@ -1136,10 +1085,6 @@ class SimulationEngine:
                 )
                 screen.blit(label_surf, label_rect)
 
-            # Isik sureleri (saniye) artik simulasyon gorunumunun uzerine
-            # yazilmiyor -- bu bilgi kontrol panelindeki SIGNAL/hero
-            # bolumunde ("Xs remaining") zaten aciklikla gosteriliyor,
-            # kavsak gorseli uzerinde ayrica tekrarlanmasina gerek yok.
 
             if not self.paused:
                 self.prepare_simulation_step()
@@ -1167,7 +1112,7 @@ class SimulationEngine:
                 screen.blit(overlay, (0, 0))
 
                 paused_surf = pygame.font.Font(None, 64).render(
-                    "DURAKLATILDI",
+                    t("sim.paused"),
                     True,
                     (255, 255, 255),
                 )
@@ -1240,8 +1185,8 @@ class SimulationEngine:
                     self.stop_simulation()
                     break
 
-                # Yalnızca çalışma hızını sınırlar.
-                # Simülasyon zamanının hesabında kullanılmaz.
+                # Only limits the real frame rate.
+                # Not used for simulated time.
                 time.sleep(1 / self.fps)
 
             self._join_worker_threads(thread1, thread2)

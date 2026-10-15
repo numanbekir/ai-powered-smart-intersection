@@ -1,6 +1,6 @@
+from core.i18n import approach_name, t
+
 DIRECTIONS = ["right", "down", "left", "up"]
-# The side of the intersection each approach is on, as labelled on screen.
-APPROACH_NAMES = {"right": "Sol", "down": "Yukarı", "left": "Sağ", "up": "Aşağı"}
 
 
 class DemandStrategy:
@@ -24,7 +24,7 @@ class DemandStrategy:
     """
 
     strategy_key = "demand"
-    score_semantics = {"label": "index (araç + λ·kırmızı süre)", "higher_is_better": True}
+    score_semantics = {"label": "index (vehicles + λ·red time)", "higher_is_better": True}
 
     def __init__(self):
         self.served_directions = set()
@@ -149,7 +149,7 @@ class DemandStrategy:
             unserved = [d for d in active if d not in served]
             if unserved and best not in unserved:
                 redirected = max(unserved, key=lambda d: indices[d])
-                note = " Tur adaleti gereği sıra bu yöndeydi."
+                note = t("sim.reason.fairness_note")
                 best = redirected
         return best, indices, served, note
 
@@ -197,10 +197,12 @@ class DemandStrategy:
                     min(max_green, round(eta + float(params["emergency_clearance_buffer"]))),
                 )
             )
-            reason = (
-                f"{APPROACH_NAMES[emergency_direction]} yöne {green_time} saniye yeşil verildi: "
-                f"acil durum aracı dur çizgisine {emergency['distance']:.0f} piksel uzakta, "
-                f"önünde {emergency['vehicles_ahead']} araç var."
+            reason = t(
+                "sim.reason.emergency",
+                approach=approach_name(emergency_direction),
+                green=green_time,
+                distance=f"{emergency['distance']:.0f}",
+                ahead=emergency["vehicles_ahead"],
             )
             return (
                 emergency_direction,
@@ -221,7 +223,7 @@ class DemandStrategy:
             return (
                 fallback,
                 min_green,
-                f"Hiçbir yönde araç yok, yeşil {APPROACH_NAMES[fallback]} yönde kalıyor.",
+                t("sim.reason.no_demand", approach=approach_name(fallback)),
                 {
                     "emergency_priority": False,
                     "direction_debug": self.direction_debug(observation, fallback),
@@ -232,10 +234,13 @@ class DemandStrategy:
         self.served_directions = served
         green_time = self.green_time_for(observation, params, best)
         info = observation[best]
-        reason = (
-            f"{APPROACH_NAMES[best]} yöne {green_time} saniye yeşil verildi. "
-            f"O anda {info['visible_count']} araç vardı, yön "
-            f"{self.red_time(best, now, current_direction):.0f} saniyedir kırmızıydı.{note}"
+        reason = t(
+            "sim.reason.normal",
+            approach=approach_name(best),
+            green=green_time,
+            count=info["visible_count"],
+            red=f"{self.red_time(best, now, current_direction):.0f}",
+            note=note,
         )
         return (
             best,
